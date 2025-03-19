@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import axios from "axios";
 import LandingPage from "./components/LandingPage";
 import LoginPage from "./components/LoginPage";
+import UserPage from "./components/UserPage";
 
 function App() {
     const [message, setMessage] = useState("");
@@ -18,6 +19,7 @@ function App() {
             <Routes>
                 <Route exact path="/" element={<LandingPage />} />
                 <Route path="/user-sign-in" element={<LoginPage />} />
+                <Route path="/user-page" element={<UserPage />} />
             </Routes>
         </Router>
     );
