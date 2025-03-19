@@ -15,7 +15,9 @@ def hello():
 @app.route('/api/protected', methods=['GET'])
 @jwt_required()
 def protected():
+    # get current user
     current_user = get_jwt_identity()
+    # return email
     return jsonify(email=current_user), 200
 
 @app.route('/api/login', methods=['POST'])
@@ -33,6 +35,7 @@ def login():
         return jsonify({"message": "Login successful", "token": access_token}), 200
 
     else:
+        # return error message
         return jsonify({"message": "Incorrect username or password"}), 401
 
 

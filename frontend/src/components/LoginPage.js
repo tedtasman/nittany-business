@@ -24,8 +24,6 @@ export default function LoginPage() {
             // await response
             const data = await response.json();
 
-            console.log(data);
-
             // on successful login
             if (response.ok){
                 // store token
