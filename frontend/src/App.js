@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import axios from "axios";
+import LandingPage from "./components/LandingPage";
+import LoginPage from "./components/LoginPage";
 
 function App() {
     const [message, setMessage] = useState("");
@@ -11,10 +14,12 @@ function App() {
     }, []);
 
     return (
-        <div>
-            <h1>React + Flask App</h1>
-            <p>{message}</p>
-        </div>
+        <Router>
+            <Routes>
+                <Route exact path="/" element={<LandingPage />} />
+                <Route path="/user-sign-in" element={<LoginPage />} />
+            </Routes>
+        </Router>
     );
 }
 
