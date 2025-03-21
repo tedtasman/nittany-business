@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="dataSourceStorageLocal" created-in="PY-243.24978.54">
-    <data-source name="nittanybusiness.sqlite" uuid="ca675e23-46d7-4f40-b509-f8f804b4975b">
+    <data-source name="nittanybusiness.sqlite" uuid="a397fa66-4f8c-4165-bad0-4ec805887866">
       <database-info product="SQLite" version="3.45.1" jdbc-version="4.2" driver-name="SQLite JDBC" driver-version="3.45.1.0" dbms="SQLITE" exact-version="3.45.1" exact-driver-version="3.45">
         <identifier-quote-string>&quot;</identifier-quote-string>
       </database-info>
@@ -13,6 +13,11 @@
           <node kind="schema" qname="@" />
         </introspection-scope>
       </schema-mapping>
+    </data-source>
+    <data-source name="nittanybusiness" uuid="c1187d6e-9d6e-4ab9-92ca-a940e0ce5dde">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="SQLITE" />
+      <auth-provider>no-auth</auth-provider>
+      <schema-mapping />
     </data-source>
   </component>
 </project>
