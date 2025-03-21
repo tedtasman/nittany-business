@@ -4,6 +4,7 @@ import axios from "axios";
 import LandingPage from "./components/LandingPage";
 import LoginPage from "./components/LoginPage";
 import UserPage from "./components/UserPage";
+import RegisterPage from "./components/RegisterPage";
 
 function App() {
     const [message, setMessage] = useState("");
@@ -20,6 +21,7 @@ function App() {
                 <Route exact path="/" element={<LandingPage />} />
                 <Route path="/user-sign-in" element={<LoginPage />} />
                 <Route path="/user-page" element={<UserPage />} />
+                <Route path="/user-registration" element={<RegisterPage />} />
             </Routes>
         </Router>
     );

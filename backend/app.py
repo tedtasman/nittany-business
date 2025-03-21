@@ -43,10 +43,8 @@ def login():
 
     conn.close()
 
-
-
     # check if password is correct and user exists
-    if not user or check_password_hash(user['password'], password):
+    if not user or not check_password_hash(user['password'], password):
         return jsonify({"msg": "Incorrect email or password"}), 401
 
     # create access token

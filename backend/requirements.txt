@@ -2,3 +2,5 @@ flask
 flask-cors
 urllib3
 flask_jwt_extended
+werkzeug
+sqlite3

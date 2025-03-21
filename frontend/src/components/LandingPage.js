@@ -7,6 +7,7 @@ export default function LandingPage() {
                 Welcome to Nittany Business
             </h1>
             <Link to="/user-sign-in">Log In</Link>
+            <Link to="/user-registration">Register</Link>
         </>
     )
 }
