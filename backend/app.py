@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
 import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +28,7 @@ def protected():
     # return email
     return jsonify(email=current_user), 200
 
+
 @app.route('/api/login', methods=['POST'])
 def login():
     # receive request, get email and password
@@ -41,15 +43,41 @@ def login():
 
     conn.close()
 
+
+
     # check if password is correct and user exists
-    if not user or user['password'] != password:
-        return jsonify({"msg": "Bad email or password"}), 401
+    if not user or check_password_hash(user['password'], password):
+        return jsonify({"msg": "Incorrect email or password"}), 401
 
     # create access token
     token = create_access_token(identity=email)
 
     return jsonify(token=token), 200
 
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    # receive request, get email and password
+    data = request.get_json()
+    email, password = data.get('email'), data.get('password')
+
+    # connect to db
+    conn = get_db_connection()
+
+    # check if user already exists
+    existing_user = conn.execute('SELECT * FROM users WHERE email = ?', (email, )).fetchone()
+    if existing_user:
+        return jsonify({"msg": "User already exists"}), 400
+
+    # hash the password
+    hashed_password = generate_password_hash(password)
+
+    # insert new user into db
+    conn.execute('INSERT INTO users (email, password) VALUES (?, ?)', (email, hashed_password))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "User created successfully"}), 201
 
 
 
