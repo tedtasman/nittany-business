@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "../App.css"
 
 export default function LoginPage() {
 
@@ -55,29 +56,31 @@ export default function LoginPage() {
 
     return (
         <>
-            <h1>Registration Page</h1>
-            <form onSubmit={handleSubmit}>
-                <input name="email"
-                       type="email"
-                       placeholder="Email"
-                       value={email}
-                       onChange={(e) => setEmail(e.target.value)}
-                />
-                <input name="password"
-                       type="password"
-                       placeholder="Password"
-                       value={password}
-                       onChange={(e) => setPassword(e.target.value)}
-                />
-                <input name="password_confirmation"
-                          type="password"
-                          placeholder="Confirm Password"
-                          value={password_confirmation}
-                          onChange={(e) => setPasswordConfirmation(e.target.value)}
-                />
-                <button type="submit">Login</button>
-            </form>
-            {error && <p>{error}</p>}
+            <div className="wrapper">
+                <h1 className={"header"}>Registration Page</h1>
+                <form onSubmit={handleSubmit} className={"form"}>
+                    <input name="email"
+                           type="email"
+                           placeholder="Email"
+                           value={email}
+                           onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <input name="password"
+                           type="password"
+                           placeholder="Password"
+                           value={password}
+                           onChange={(e) => setPassword(e.target.value)}
+                    />
+                    <input name="password_confirmation"
+                              type="password"
+                              placeholder="Confirm Password"
+                              value={password_confirmation}
+                              onChange={(e) => setPasswordConfirmation(e.target.value)}
+                    />
+                    <button type="submit">Login</button>
+                    {error && <p className={"error"}>{error}</p>}
+                </form>
+            </div>
         </>
     )
 }

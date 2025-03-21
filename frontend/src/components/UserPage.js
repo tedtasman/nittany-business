@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "../App.css"
 
 export default function UserPage() {
 
@@ -12,7 +13,7 @@ export default function UserPage() {
 
         // confirm token exists
         if (!token) {
-            window.location.href = "/user-sign-in";
+
             return;
         }
 
@@ -37,7 +38,6 @@ export default function UserPage() {
             // catch error
             .catch(error => {
                 console.error(error);
-                window.location.href = "/user-sign-in"; // redirect to login page
             });
     }, []);
 
@@ -45,10 +45,22 @@ export default function UserPage() {
         <>
             {userData ? (
                 <>
-                    <h1>Welcome {userData.name}</h1>
-                    <p>Email: {userData.email}</p>
+                    <div className="wrapper">
+                        <h1 className="header">User Page</h1>
+                        <p className={"centered"}>Email: {userData.email}</p>
+                    </div>
                 </>
-            ) : null}
+            ) :
+            (
+                <div className="wrapper">
+                    <h1 className="header">You are not logged in.</h1>
+                    <p className={"centered"}>Please log in to view your user page.</p>
+                    <div className={"links"}>
+                        <a href="/user-sign-in">Log In</a>
+                        <a href="/user-registration">Register</a>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
