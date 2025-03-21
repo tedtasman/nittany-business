@@ -33,16 +33,22 @@ def login():
     data = request.get_json()
     email, password = data.get('email'), data.get('password')
 
-    # check if user exists
-    user = User.query.filter_by(email=email).first()
+    # connect to db
+    conn = get_db_connection()
 
-    if not user or user.password != password:
+    # get user from db
+    user = conn.execute('SELECT * FROM users WHERE email = ?', (email, )).fetchone()
+
+    conn.close()
+
+    # check if password is correct and user exists
+    if not user or user['password'] != password:
         return jsonify({"msg": "Bad email or password"}), 401
 
     # create access token
-    access_token = create_access_token(identity=email)
+    token = create_access_token(identity=email)
 
-    return jsonify(access_token=access_token), 200
+    return jsonify(token=token), 200
 
 
 
