@@ -2,11 +2,19 @@ from urllib import request
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_access_token
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 CORS(app)
 app.config["JWT_SECRET_KEY"] = "secret_key"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///nittanybusiness.db'
 jwt = JWTManager(app)
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    __tablename__ = 'Users'
+    email = db.Column(db.String(30), primary_key=True)
+    password = db.Column(db.String(30), nullable=False)
 
 @app.route('/api/hello', methods=['GET'])
 def hello():
@@ -26,17 +34,7 @@ def login():
     data = request.get_json()
     email, password = data.get('email'), data.get('password')
 
-    # TODO implement user validation
-    if email == 'valid@valid.com' and password == 'valid':
-        # create JWT token
-        access_token = create_access_token(identity=email)
 
-        # return token
-        return jsonify({"message": "Login successful", "token": access_token}), 200
-
-    else:
-        # return error message
-        return jsonify({"message": "Incorrect username or password"}), 401
 
 
 
