@@ -13,15 +13,16 @@ export default function UserPage() {
 
         // confirm token exists
         if (!token) {
-
             return;
         }
 
+        // fetch user data
         fetch("http://127.0.0.1:5000/api/protected", {
             headers: {
                 "Authorization": `Bearer ${token}`
             }
         })
+
             // await response
             .then(response => {
                 if (response.ok) {
@@ -30,11 +31,13 @@ export default function UserPage() {
                     throw new Error("Invalid Token");
                 }
             })
+
             // set user data
             .then(data => {
                 setUserData(data);
                 console.log("User Data: ", data);
             })
+
             // catch error
             .catch(error => {
                 console.error(error);

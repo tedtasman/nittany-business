@@ -11,7 +11,7 @@ export default function LoginPage() {
 
     // Handler for submission
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // stop page from refreshing
 
         // check if password and confirmation match
         if (password !== password_confirmation) {

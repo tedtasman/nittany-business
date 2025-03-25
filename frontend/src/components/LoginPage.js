@@ -10,7 +10,7 @@ export default function LoginPage() {
 
     // Handler for submission
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // stop page from refreshing
 
         try {
             // post email and password to login api
