@@ -52,6 +52,30 @@ def login():
 
     return jsonify(token=token), 200
 
+@app.route('/api/is_buyer', methods=['GET'])
+def is_buyer():
+    # Get email from query params
+    email = request.args.get('email')
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    # Connect to the database
+    conn = get_db_connection()
+    try:
+        buyer = conn.execute('SELECT 1 FROM Buyers WHERE email = ?', (email,)).fetchone()
+    except Exception as e:
+        conn.close()
+        print("DB error:", e)
+        return jsonify({'error': 'Database query failed'}), 500
+
+    conn.close()
+
+    if buyer:
+        print(f"[SUCCESS] Email '{email}' found in Buyers table.")
+    else:
+        print(f"[INFO] Email '{email}' NOT found in Buyers table.")
+
+    return jsonify({'is_buyer': bool(buyer)}), 200
 
 @app.route('/api/register', methods=['POST'])
 def register():
