@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {Link} from "react-router-dom";
 import "../App.css"
+import NoTokenPage from "./NoTokenPage";
 
 export default function UserPage() {
 
@@ -81,14 +82,7 @@ export default function UserPage() {
                 </>
             ) :
             (
-                <div className="wrapper">
-                    <h1 className="header">You are not logged in.</h1>
-                    <p className={"centered"}>Please log in to view your user page.</p>
-                    <div className={"links"}>
-                        <a href="/user-sign-in">Log In</a>
-                        <a href="/user-registration">Register</a>
-                    </div>
-                </div>
+                <NoTokenPage />
             )}
         </>
     );

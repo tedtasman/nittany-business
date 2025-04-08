@@ -1,6 +1,7 @@
 import "../App.css";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import NoTokenPage from "./NoTokenPage";
 
 export default function ProductListingsPage() {
     const [userData, setUserData] = useState(null);
@@ -132,7 +133,7 @@ export default function ProductListingsPage() {
             {userData ? (
                 <div className="wrapper">
                     <div style={{ position: 'absolute', top: 10, right: 10 }}>
-                        <button onClick={() => setIsCartOpen(true)} className="btn">
+                        <button onClick={() => setIsCartOpen(true)} className="btn-secondary">
                             Shopping Cart ({cart.length})
                         </button>
                     </div>
@@ -267,9 +268,10 @@ export default function ProductListingsPage() {
                                         ))}
                                     </select>
                                 </div>
-
-                                <button onClick={handleAddToCart} className="btn">Send to Cart</button>
-                                <button onClick={closeModal} className="btn">Close</button>
+                                <div className="pagination-controls">
+                                    <button onClick={handleAddToCart} className="btn">Send to Cart</button>
+                                    <button onClick={closeModal} className="btn">Close</button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -278,7 +280,12 @@ export default function ProductListingsPage() {
                             <div className="modal">
                                 <h2>Your Shopping Cart</h2>
                                 {cart.length === 0 ? (
-                                    <p>Your cart is empty.</p>
+                                    <>
+                                        <p>Your cart is empty.</p>
+                                        <div className={'pagination-controls'}>
+                                            <button className="btn-secondary" onClick={() => setIsCartOpen(false)}>Back to Browse</button>
+                                        </div>
+                                    </>
                                 ) : (
                                     <>
                                         <table className="cart-table">
@@ -299,7 +306,7 @@ export default function ProductListingsPage() {
                                                         <td>{item.Product_Price}</td>
                                                         <td>${(parsePrice(item.Product_Price) * item.quantity).toFixed(2)}</td>
                                                         <td>
-                                                            <button onClick={() => removeFromCart(index)} className="btn">
+                                                            <button onClick={() => removeFromCart(index)} className="btn-red">
                                                                 Remove
                                                             </button>
                                                         </td>
@@ -308,10 +315,13 @@ export default function ProductListingsPage() {
                                             </tbody>
                                         </table>
                                         <p><strong>Total Cost:</strong> ${cart.reduce((acc, item) => acc + (parsePrice(item.Product_Price) * item.quantity), 0).toFixed(2)}</p>
-                                        <button className="btn" onClick={placeOrder}>Place Order</button>
+                                        <div className={'cart-controls'}>
+                                            <button className="btn-secondary" onClick={placeOrder}>Place Order</button>
+                                            <button className="btn" onClick={() => setIsCartOpen(false)}>Close</button>
+                                        </div>
                                     </>
                                 )}
-                                <button className="btn" onClick={() => setIsCartOpen(false)}>Close</button>
+
                             </div>
                         </div>
                     )}
@@ -322,13 +332,7 @@ export default function ProductListingsPage() {
                     </div>
                 </div>
             ) : (
-                <div className="wrapper">
-                    <h1 className="header">Access Denied</h1>
-                    <p className="centered">Please log in to view this page.</p>
-                    <div className="links">
-                        <Link to="/user-sign-in">Log In</Link>
-                    </div>
-                </div>
+                <NoTokenPage />
             )}
         </>
     );
