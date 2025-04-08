@@ -103,3 +103,183 @@ Body {
 .btn:hover {
     background-color: #004444; /* Darken on hover */
 }
+/* Dark Mode Table Styles */
+.product-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #333; /* Dark background for the table */
+    color: white; /* White text */
+}
+
+.product-table th,
+.product-table td {
+    padding: 4px 12px; /* Reduced padding for closer rows and better alignment */
+    text-align: left;
+    vertical-align: middle; /* Vertically center the content */
+}
+
+.product-table th {
+    background-color: #444; /* Darker header background */
+    font-weight: bold;
+}
+
+.product-table tr {
+    background-color: #555; /* Same color for all rows */
+    height: 20px; /* Reduced height for each row */
+}
+
+.product-table tr:hover {
+    background-color: #666; /* Hover effect for rows */
+}
+
+.product-table td {
+    border: none; /* Remove borders for a cleaner look */
+}
+
+.product-table th, .product-table td {
+    border-bottom: none; /* No table lines */
+}
+
+/* View Button Styles */
+.view-button {
+    display: inline-block;
+    background-color: #007bff;
+    max-height: 10px;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    vertical-align: middle; /* Vertically center the button in the cell */
+}
+
+.view-button:hover {
+    background-color: #0056b3; /* Darken the button color on hover */
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Dark overlay background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.modal {
+    background-color: #222; /* Dark modal background */
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 600px;
+    width: 80%;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.7);
+}
+
+.modal h2 {
+    margin-bottom: 20px;
+    color: white;
+}
+
+.modal p {
+    margin-bottom: 10px;
+    color: white;
+}
+
+/* Pagination Styles */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination-btn {
+    padding: 10px 20px;
+    margin: 0 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.pagination-btn:hover {
+    background-color: #0056b3;
+}
+
+.pagination-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Search Bar Container */
+.search-bar-container {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* Individual Search Bar */
+.search-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.search-bar input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #222;
+    color: white;
+}
+
+.search-bar label {
+    margin-bottom: 5px;
+    color: white;
+    font-size: 14px;
+}
+
+.search-bar input::placeholder {
+    color: #aaa;
+}
+
+.dropdown-dark {
+    background-color: #222;
+    color: #ffffff;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 5px;
+    min-height: 40px;
+
+}
+
+.dropdown-dark option {
+    display: block;
+    background-color: #1f1f1f;
+    color: #f0f0f0;
+    border: 1px solid #555;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-top: 4px;
+}
+.search-bar-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.search-bar label {
+    display: block;
+    margin-bottom: 4px;
+    color: #ddd;
+}
