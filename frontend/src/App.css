@@ -1,25 +1,58 @@
-Body {
+@import url('https://fonts.googleapis.com/css?family=Outfit:500|Outfit:400');
+
+body {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 400;
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-    color: white;
+    color: var(--text);
 }
 
+h1, h2, h3, h4, h5 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
+}
+
+html {font-size: 100%;} /* 16px */
+
+h1 {font-size: 4.210rem; /* 67.36px */}
+
+h2 {font-size: 3.158rem; /* 50.56px */}
+
+h3 {font-size: 2.369rem; /* 37.92px */}
+
+h4 {font-size: 1.777rem; /* 28.48px */}
+
+h5 {font-size: 1.333rem; /* 21.28px */}
+
+small {font-size: 0.750rem; /* 12px */}
+
+:root {
+    --text: #EEFEFF;
+    --background: #222222;
+    --lighter-background: #444444;
+    --primary: #008888;
+    --secondary: #004444;
+    --accent: #006644;
+    --accent-dull: #224433;
+    --larger: 1.333rem;
+    --error: #882222;
+}
 
 .wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     width: 100vw;
     margin: 0;
     padding: 3rem;
     box-sizing: border-box;
-    background-color: #222222;
+    background-color: var(--background);
 }
 
 .header {
-    color: white;
+    color: var(--text);
     padding: 20px;
     text-align: center;
 }
@@ -31,16 +64,46 @@ Body {
 }
 
 .links a {
-    color: white;
+    color: var(--text);
     text-decoration: none;
     padding: 10px 20px;
     border-radius: 5px;
-    background-color: #444444;
-    transition: background-color 0.3s;
+    background-color: var(--accent-dull);
+    transition: all 0.1s;
 }
 
 .links a:hover {
-    background-color: #006666;
+    background-color: var(--primary);
+    box-shadow: var(--primary) 0 0 10px;
+}
+
+.dropdown-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 30px 0;
+    gap: 20px;
+}
+
+.dropdown-container h4 {
+    margin: 0;
+    padding: 0;
+}
+
+.dropdown {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--secondary);
+    color: var(--text);
+    transition: all 0.1s;
+    font-size: var(--larger);
+}
+
+.dropdown:hover {
+    background-color: var(--primary);
+    box-shadow: var(--primary) 0 0 10px;
 }
 
 .form {
@@ -49,31 +112,45 @@ Body {
     align-items: center;
     justify-content: center;
     gap: 20px;
+    margin: 20px 0;
+}
+
+.form h4 {
+    margin: 0;
+    padding: 0;
 }
 
 .form input {
     padding: 10px;
-    border: 1px solid #ccc;
+    border: none;
     border-radius: 5px;
     width: 200px;
+    background-color: var(--lighter-background);
+    color: var(--text);
+    transition: all 0.1s;
+}
+
+.form input:hover {
+    background-color: var(--accent-dull);
 }
 
 .form button {
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
-    background-color: #006666;
-    color: white;
+    background-color: var(--accent-dull);
+    color: var(--text);
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
 }
 
 .form button:hover {
-    background-color: #004444;
+    background-color: var(--primary);
+    box-shadow: var(--primary) 0 0 10px;
 }
 
 .error {
-    color: #880000;
+    color: var(--error);
     font-size: 14px;
     text-align: center;
 }
@@ -85,10 +162,9 @@ Body {
     justify-content: center;
 }
 
-/* Assuming you already have button styles like these */
 .btn {
     display: inline-block;
-    background-color: #444444; /* Default button color */
+    background-color: var(--lighter-background);
     color: white;
     padding: 10px 10px;
     font-size: 20px;
@@ -96,12 +172,12 @@ Body {
     border-radius: 5px;
     text-align: center;
     cursor: pointer;
-    margin-top: 20px; /* Add space around the button */
+    margin-top: 20px;
     max-width: 180px;
 }
 
 .btn:hover {
-    background-color: #004444; /* Darken on hover */
+    background-color: var(--secondary);
 }
 /* Dark Mode Table Styles */
 .product-table {
