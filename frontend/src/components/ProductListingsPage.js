@@ -17,7 +17,10 @@ export default function ProductListingsPage() {
     const [maxPrice, setMaxPrice] = useState("");
     const [cart, setCart] = useState([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
-
+    const [categories, setCategories] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState("Root");
+    const [showCategories, setShowCategories] = useState(false);
+    const [parentCategory, setParentCategory] = useState(null);
 
 
     useEffect(() => {
@@ -41,6 +44,17 @@ export default function ProductListingsPage() {
             .then((res) => res.json())
             .then((data) => setProducts(data))
             .catch((err) => console.error("Product fetch error:", err));
+
+        fetch("http://127.0.0.1:5000/api/subcategories", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ parent_category: "Root" })
+        })
+            .then((res) => res.json())
+            .then((data) => setCategories(data))
+            .catch((err) => console.error("Categories fetch error:", err));
     }, []);
 
     const parsePrice = (price) => parseFloat(price.replace(/[^0-9.-]+/g, ""));
@@ -127,6 +141,60 @@ export default function ProductListingsPage() {
         closeModal();
     };
 
+    const getSubcategories = (category) => {
+        return fetch("http://127.0.0.1:5000/api/subcategories", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ parent_category: category })
+        })
+            .then((res) => res.json())
+            .then((data) => data)
+            .catch((err) => console.error("Subcategories fetch error:", err));
+    }
+
+    const getParentCategory = (category) => {
+        return fetch(`http://127.0.0.1:5000/api/parent_category/${category}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+            .then((res) => res.json())
+            .then((data) => data)
+            .catch((err) => console.error("Parent category fetch error:", err));
+    }
+
+    
+
+    const handleCategoryChange = async (category) => {
+        try {
+            const subcategories = await getSubcategories(category);
+            setCategories(subcategories);
+            const parentCategory = await getParentCategory(category);
+
+            if (parentCategory === "None") {
+                setParentCategory(null)
+            }
+            else {
+                setParentCategory(parentCategory);
+            }
+
+            setSelectedCategory(category);
+
+            if (subcategories.length > 0) {
+                setShowCategories(true)
+            }
+            else {
+                setShowCategories(false)
+            }
+        }
+        catch (error) {
+            console.error("Error fetching subcategories:", error);
+        }
+    }
+
 
     return (
         <>
@@ -143,6 +211,11 @@ export default function ProductListingsPage() {
                     </p>
 
                     <div className="search-bar-container">
+                        <div className={"search-bar"}>
+                            <button className={'btn-secondary'} onClick={() => setShowCategories(true)}>
+                                {parentCategory ? `Showing ${selectedCategory}` : "Select a Category"}
+                            </button>
+                        </div>
                         <div className="search-bar">
                             <label htmlFor="productName">Search by Product Name:</label>
                             <input
@@ -153,7 +226,6 @@ export default function ProductListingsPage() {
                                 onChange={(e) => setSearchProductName(e.target.value)}
                             />
                         </div>
-
                         <div className="search-bar">
                             <label htmlFor="listingID">Search by Listing ID:</label>
                             <input
@@ -325,7 +397,36 @@ export default function ProductListingsPage() {
                             </div>
                         </div>
                     )}
+                    {showCategories && (
+                        <div className="modal-overlay">
+                            <div className="modal">
+                                <h2>{parentCategory ? selectedCategory : "Select a Category:"}</h2>
+                                <ul className={"categories-ul"}>
+                                    {parentCategory &&
+                                        <li>
+                                            <button
+                                                className="btn-red"
+                                                onClick={() => handleCategoryChange(parentCategory)}>Back</button>
+                                        </li>
+                                    }
+                                    {categories.map((category) => (
+                                        <li key={category}>
+                                            <button className="btn" onClick={() => handleCategoryChange(category)}>{category}</button>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <button
+                                    onClick={() => setShowCategories(false)}
+                                    className="btn"
+                                    style={{marginTop: 20}}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    )
 
+                    }
 
                     <div className="links" style={{ marginBottom: 20 }}>
                         <Link to="/user-page">User Dashboard</Link>

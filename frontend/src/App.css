@@ -428,3 +428,18 @@ small {font-size: 0.750rem; /* 12px */}
     margin-bottom: 4px;
     color: #ddd;
 }
+
+.categories-ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+}
+
+.categories-ul button {
+    width: 100% !important;
+    max-width: none !important;
+}
