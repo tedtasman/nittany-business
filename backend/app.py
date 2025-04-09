@@ -58,6 +58,50 @@ def get_products():
         print("Error fetching products:", e)
         return jsonify({'error': 'Database query failed'}), 500
 
+@app.route('/api/parent_category/<child>', methods=['GET'])
+def get_parent_categories(child):
+
+    try:
+        if child == 'Root':
+            return jsonify('None'), 200
+
+        conn = get_db_connection()
+        parent_category = conn.execute('SELECT parent_category FROM Categories WHERE category_name = ?', (child,)).fetchone()[0]
+        conn.close()
+
+        if not parent_category:
+            return jsonify('None'), 200
+
+        return jsonify(parent_category), 200
+    except Exception as e:
+        print("Error fetching parent category:", e)
+        return jsonify({'error': 'Database query failed'}), 500
+
+
+@app.route('/api/subcategories', methods=['POST'])
+def get_subcategories():
+    """
+    Get categories based on parent category
+    """
+    data = request.get_json()
+    parent_category = data['parent_category']
+
+    try:
+        conn = get_db_connection()
+        categories = conn.execute('SELECT category_name FROM Categories WHERE parent_category = ?', (parent_category,)).fetchall()
+        conn.close()
+
+        # Convert result to a list of dictionaries
+        category_list = [category['category_name'] for category in categories]
+
+        return jsonify(category_list), 200
+
+    except Exception as e:
+
+        print("Error fetching categories:", e)
+        return jsonify({'error': 'Database query failed'}), 500
+
+
 @app.route("/api/place-order", methods=["POST"])
 def place_order():
     data = request.get_json()
@@ -129,10 +173,6 @@ def is_buyer():
         print(f"[INFO] Email '{email}' NOT found in Buyers table.")
 
     return jsonify({'is_buyer': bool(buyer)}), 200
-
-
-
-
 
 @app.route('/api/login', methods=['POST'])
 def login():
