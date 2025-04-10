@@ -57,6 +57,7 @@ small {font-size: 0.750rem; /* 12px */}
     color: var(--text);
     padding: 20px;
     text-align: center;
+    margin: 0;
 }
 
 .links {
@@ -206,7 +207,7 @@ small {font-size: 0.750rem; /* 12px */}
 
 .btn-red {
     display: inline-block;
-    background-color: var(--red-dark);
+    background-color: var(--red-dark) !important;
     padding: 10px;
     color: var(--text);
     border: none;
@@ -220,8 +221,8 @@ small {font-size: 0.750rem; /* 12px */}
 }
 
 .btn-red:hover {
-    background-color: var(--red);
-    box-shadow: var(--red) 0 0 10px;
+    background-color: var(--red) !important;
+    box-shadow: var(--red) 0 0 10px !important;
 }
 
 .product-table {
