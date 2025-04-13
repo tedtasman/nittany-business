@@ -284,7 +284,7 @@ def register():
     # for admins:
     if user_type == 'admin':
         # insert new admin into db
-        #conn.execute('INSERT INTO Admins (email, role) VALUES (?, ?)', (email, data.get('role')))
+        conn.execute('INSERT INTO Admins (email, role) VALUES (?, ?)', (email, data.get('role')))
         conn.commit()
 
     # hash the password
