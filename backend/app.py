@@ -31,12 +31,22 @@ def protected():
 
 @app.route('/api/products', methods=['GET'])
 def get_products():
+    category = request.args.get('category', None)
+
     try:
         conn = get_db_connection()
-        products = conn.execute('SELECT * FROM Product_Listings').fetchall()
+
+        if category and category != "Root":
+            categories_to_filter = get_subcategories_recursively(category)
+            categories_to_filter.append(category)
+            placeholders = ','.join('?' for _ in categories_to_filter)
+            query = f'SELECT * FROM Product_Listings WHERE Category IN ({placeholders})'
+            products = conn.execute(query, categories_to_filter).fetchall()
+        else:
+            products = conn.execute('SELECT * FROM Product_Listings').fetchall()
+
         conn.close()
 
-        # Convert result to a list of dictionaries
         product_list = [
             {
                 'Seller_Email':  product['Seller_Email'],
@@ -58,6 +68,7 @@ def get_products():
         print("Error fetching products:", e)
         return jsonify({'error': 'Database query failed'}), 500
 
+
 @app.route('/api/parent_category/<child>', methods=['GET'])
 def get_parent_categories(child):
 
@@ -78,10 +89,33 @@ def get_parent_categories(child):
         return jsonify({'error': 'Database query failed'}), 500
 
 
+def get_subcategories_recursively(parent):
+    """
+    Recursively get all subcategories of a given parent category. and subcategories of those categories.
+    """
+    print(parent)
+    subcategories = []
+    queue = [parent]
+    try:
+        conn = get_db_connection()
+        while queue:
+            current = queue.pop()
+            rows = conn.execute('SELECT category_name FROM Categories WHERE parent_category = ?', (current,)).fetchall()
+            for row in rows:
+                subcat = row['category_name']
+                subcategories.append(subcat)
+                queue.append(subcat)
+        conn.close()
+        return subcategories
+    except Exception as e:
+        print("Error fetching subcategories:", e)
+        return []
+
+
 @app.route('/api/subcategories', methods=['POST'])
 def get_subcategories():
     """
-    Get categories based on parent category
+    Get categories based on parent category, only one level
     """
     data = request.get_json()
     parent_category = data['parent_category']
@@ -250,7 +284,7 @@ def register():
     # for admins:
     if user_type == 'admin':
         # insert new admin into db
-        conn.execute('INSERT INTO Admins (email, role) VALUES (?, ?)', (email, data.get('role')))
+        #conn.execute('INSERT INTO Admins (email, role) VALUES (?, ?)', (email, data.get('role')))
         conn.commit()
 
     # hash the password
@@ -269,4 +303,3 @@ def register():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host="0.0.0.0")
-
