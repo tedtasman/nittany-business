@@ -40,7 +40,8 @@ export default function ProductListingsPage() {
             .then((data) => setUserData(data))
             .catch((err) => console.error("User fetch error:", err));
 
-        fetch("http://127.0.0.1:5000/api/products")
+         fetch(`http://127.0.0.1:5000/api/products?category=${selectedCategory}`)
+
             .then((res) => res.json())
             .then((data) => setProducts(data))
             .catch((err) => console.error("Product fetch error:", err));
@@ -56,6 +57,14 @@ export default function ProductListingsPage() {
             .then((data) => setCategories(data))
             .catch((err) => console.error("Categories fetch error:", err));
     }, []);
+
+    useEffect(() => {
+    fetch(`http://127.0.0.1:5000/api/products?category=${encodeURIComponent(selectedCategory)}`)
+        .then((res) => res.json())
+        .then((data) => setProducts(data))
+        .catch((err) => console.error("Product fetch error:", err));
+
+}, [selectedCategory]);
 
     const parsePrice = (price) => parseFloat(price.replace(/[^0-9.-]+/g, ""));
 
@@ -166,7 +175,7 @@ export default function ProductListingsPage() {
             .catch((err) => console.error("Parent category fetch error:", err));
     }
 
-    
+
 
     const handleCategoryChange = async (category) => {
         try {
