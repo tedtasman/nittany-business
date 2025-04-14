@@ -360,7 +360,7 @@ export default function ProductListingsPage() {
                                     <tr key={product.Listing_ID}>
                                         <td>{product.Listing_ID}</td>
                                         <td>{product.Product_Name}</td>
-                                        <td>{product.Product_Price}</td>
+                                        <td>${product.Product_Price.toFixed(2)}</td>
                                         <td>{product.Status ? "Available" : "Out of Stock"}</td>
                                         <td>
                                             <button onClick={() => openModal(product)} className="btn">
