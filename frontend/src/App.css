@@ -137,6 +137,33 @@ small {font-size: 0.750rem; /* 12px */}
     background-color: var(--accent-dull);
 }
 
+.form input:focus {
+    outline: none;
+    box-shadow: var(--accent) 0 0 15px;
+}
+
+.form textarea {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    width: 400px;
+    height: 200px;
+    background-color: var(--lighter-background);
+    color: var(--text);
+    transition: all 0.1s;
+}
+
+.small-textarea {
+    height: 50px !important;
+}
+.form textarea:focus {
+    outline: none;
+    box-shadow: var(--accent) 0 0 15px;
+}
+.form textarea:hover {
+    background-color: var(--accent-dull);
+}
+
 .form button {
     padding: 10px 20px;
     border: none;

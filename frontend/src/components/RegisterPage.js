@@ -121,7 +121,7 @@ export default function LoginPage() {
                               onChange={(e) => setPasswordConfirmation(e.target.value)}
                     />
                     {renderForm()}
-                    <button type="submit">Login</button>
+                    <button type="submit">Register</button>
                     {error && <p className={"error"}>{error}</p>}
                 </form>
             </div>

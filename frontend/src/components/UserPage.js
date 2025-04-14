@@ -59,7 +59,8 @@ export default function UserPage() {
                         <Link to="/product-listings" className="btn">
                             Product Listings
                         </Link>
-                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
+                        <RequestButton/>
+                        <LogOutButton/>
                     </div>
                 </div>
             </>
@@ -78,7 +79,8 @@ export default function UserPage() {
                         <Link to="/user-page" className="btn">
                             Placeholder
                         </Link>
-                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
+                        <RequestButton/>
+                        <LogOutButton/>
                     </div>
                 </div>
             </>
@@ -92,19 +94,36 @@ export default function UserPage() {
                     <h3 className={"header"}>{userData.position}</h3>
                     <p className={"centered"}>{userData.email}</p>
                     <div className="links">
-                        <Link to="/user-page" className="btn">
-                            Placeholder
+                        <Link to="/requests" className="btn">
+                            Browse Requests
                         </Link>
-                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
+                        <LogOutButton/>
                     </div>
                 </div>
+            </>
+        )
+    }
+    else {
+        return (
+            <>
+                <NoTokenPage/>
             </>
         )
     }
 }
 
 
-
-const logout = () => {
-    localStorage.removeItem("token");
+const LogOutButton = () => {
+    return (
+        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
+    )
 }
+
+const RequestButton = () => {
+    return (
+        <Link to="/request" className="btn">
+            Request
+        </Link>
+    )
+}
+

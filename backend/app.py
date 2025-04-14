@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, creat
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
+import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -180,7 +181,7 @@ def get_subcategories():
         print("Error fetching categories:", e)
         return jsonify({'error': 'Database query failed'}), 500
 
-
+@jwt_required
 @app.route("/api/place-order", methods=["POST"])
 def place_order():
     data = request.get_json()
@@ -342,6 +343,118 @@ def register():
 
     return jsonify({"msg": "User created successfully"}), 201
 
+@jwt_required()
+@app.route('/api/post-requests', methods=['POST'])
+def post_request():
+    # receive request type and email
+    data = request.get_json()
+    request_type = data.get('request_type')
+    email = data.get('email')
+
+    # parse request data
+    if request_type == 'Email Change':
+        primary_content = data.get('new_email')
+        secondary_content = None
+    elif request_type == 'Order Issue':
+        primary_content = data.get('order_id')
+        secondary_content = data.get('issue')
+    elif request_type == 'Category Suggestion':
+        primary_content = data.get('category_name')
+        parent_category = data.get('parent_category')
+        description = data.get('description')
+        reason = data.get('reason')
+        secondary_content = f'Parent Category: {parent_category}\nDescription: {description}\nReason: {reason}'
+    else:
+        return jsonify({"msg": "Invalid request type"}), 400
+
+    date = datetime.datetime.now()
+    status = "New"
+
+    # connect to db
+    conn = get_db_connection()
+    # insert request into db
+    conn.execute('INSERT INTO Requests (user_email, request_type, request_date, status, primary_content, secondary_content) VALUES (?, ?, ?, ?, ?, ?)',
+                 (email, request_type, date, status, primary_content, secondary_content))
+    conn.commit()
+    conn.close()
+    return jsonify({"msg": "Request received successfully"}), 200
+
+@jwt_required()
+@app.route('/api/get-requests', methods=['GET'])
+def get_requests():
+    # connect to db
+    conn = get_db_connection()
+    # get requests from db
+    requests = conn.execute('SELECT * FROM Requests WHERE Status <> "Completed"').fetchall()
+    conn.close()
+
+    request_list = []
+
+    for req in requests:
+
+        request_data = {
+            'request_id': req['id'],
+            'user_email': req['user_email'],
+            'request_type': req['request_type'],
+            'request_date': req['request_date'],
+            'status': req['status'],
+        }
+        request_list.append(request_data)
+
+    return jsonify(request_list), 200
+
+@jwt_required()
+@app.route('/api/get-request/<request_id>', methods=['GET'])
+def get_request(request_id):
+
+    conn = get_db_connection()
+    req = conn.execute('SELECT * FROM Requests WHERE id = ?', (request_id,)).fetchone()
+    conn.close()
+
+    response = {'request_id': req['id'],
+                'request_type': req['request_type'],
+                'request_date': req['request_date'],
+                'status': req['status'],
+                'email': req["user_email"]
+                }
+
+    if req['request_type'] == "Email Change":
+        response["new_email"] = req["primary_content"]
+
+    elif req['request_type'] == "Order Issue":
+        response["order_id"] = req["primary_content"]
+        response['issue'] = req["secondary_content"]
+
+    elif req['request_type'] == "Category Suggestion":
+        response["category_name"] = req["primary_content"]
+        secondary_content = req["secondary_content"].split("\n")
+        response['parent_category'] = secondary_content[0].split(": ")[1]
+        response['description'] = secondary_content[1].split(": ")[1]
+        response['reason'] = secondary_content[2].split(": ")[1]
+    else:
+        return jsonify({"msg": "Invalid request type"}), 400
+
+    return jsonify(response), 200
+
+@jwt_required()
+@app.route('/api/update-request/<request_id>', methods=['PUT'])
+def update_request(request_id):
+    data = request.get_json()
+    status = data.get('status')
+
+    # connect to db
+    conn = get_db_connection()
+
+    req = conn.execute('SELECT * FROM Requests WHERE id = ?', (request_id,)).fetchone()
+    if not req:
+        return jsonify({"msg": "Request not found"}), 404
+
+    # update request in db
+    conn.execute('UPDATE Requests SET status = ? WHERE id = ?', (status, request_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Request updated successfully"}), 200
 
 
 def get_address_from_id(address_id):
@@ -353,6 +466,7 @@ def get_address_from_id(address_id):
         'street_name': address['street_name'],
         'zipcode': address['zipcode']
     }
+
 
 
 
