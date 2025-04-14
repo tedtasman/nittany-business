@@ -27,6 +27,13 @@ h5 {font-size: 1.333rem; /* 21.28px */}
 
 small {font-size: 0.750rem; /* 12px */}
 
+textarea, input {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 400;
+    font-size: 0.85rem;
+}
+
+
 :root {
     --text: #EEFEFF;
     --background: #222222;
@@ -470,4 +477,35 @@ small {font-size: 0.750rem; /* 12px */}
 .categories-ul button {
     width: 100% !important;
     max-width: none !important;
+}
+
+.edit-listing-form {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    grid-template-rows: repeat(5, auto);
+    gap: 20px;
+    align-items: center;
+}
+
+.edit-listing-form input, textarea {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    width: 300px;
+    background-color: var(--lighter-background);
+    color: var(--text);
+    transition: all 0.1s;
+}
+
+.edit-listing-form input::placeholder, textarea::placeholder {
+    color: #aaa;
+}
+
+.edit-listing-form input:hover, textarea:hover {
+    background-color: var(--accent-dull);
+}
+
+.edit-listing-form input:focus, textarea:focus {
+    outline: none;
+    box-shadow: var(--accent) 0 0 15px;
 }
