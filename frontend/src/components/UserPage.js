@@ -48,29 +48,59 @@ export default function UserPage() {
             });
     }, []);
 
-    return(
-        <>
-            {userType === "Buyer" ? (
-                <>
-                    <div className="wrapper">
-                        <h1 className="header">{userType} Page</h1>
-                        <h3 className={"header"}>{userData.business_name}</h3>
-                        <p className={"centered"}>{userData.email} - {userData.address.street_number} {userData.address.street_name}, {userData.address.zipcode}</p>
-                        <div className="links">
-                            <Link to="/product-listings" className="btn">
+    if (userType === "Buyer") {
+        return (
+            <>
+                <div className="wrapper">
+                    <h1 className="header">Buyer's Page</h1>
+                    <h3 className={"header"}>{userData.business_name}</h3>
+                    <p className={"centered"}>{userData.email} - {userData.address.street_number} {userData.address.street_name}, {userData.address.zipcode}</p>
+                    <div className="links">
+                        <Link to="/product-listings" className="btn">
                             Product Listings
-                            </Link>
-                            <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
-                        </div>
+                        </Link>
+                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
                     </div>
-
-                </>
-            ) :
-            (
-                <NoTokenPage />
-            )}
-        </>
-    );
+                </div>
+            </>
+        )
+    }
+    else if (userType === "Seller") {
+        return (
+            <>
+                <div className="wrapper">
+                    <h1 className="header">Seller's Page</h1>
+                    <h3 className={"header"}>{userData.business_name}</h3>
+                    <h5 className={"centered"}>Balance: ${userData.balance}</h5>
+                    <p className={"centered"}>{userData.email} - {userData.address.street_number} {userData.address.street_name}, {userData.address.zipcode}</p>
+                    <p className="centered">{userData.bank_account_number} - {userData.bank_routing_number}</p>
+                    <div className="links">
+                        <Link to="/user-page" className="btn">
+                            Placeholder
+                        </Link>
+                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
+                    </div>
+                </div>
+            </>
+        )
+    }
+    else if (userType === "HelpDesk") {
+        return (
+            <>
+                <div className="wrapper">
+                    <h1 className="header">Admin's Page</h1>
+                    <h3 className={"header"}>{userData.position}</h3>
+                    <p className={"centered"}>{userData.email}</p>
+                    <div className="links">
+                        <Link to="/user-page" className="btn">
+                            Placeholder
+                        </Link>
+                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
+                    </div>
+                </div>
+            </>
+        )
+    }
 }
 
 

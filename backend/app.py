@@ -66,7 +66,7 @@ def protected():
         user_data = {
             'email': admin['email'],
             'user_type': 'HelpDesk',
-            'role': admin['role']
+            'position': admin['position']
         }
         return jsonify(user_data), 200
 
@@ -296,7 +296,7 @@ def register():
     # for admins:
     if user_type == 'admin':
         # insert new admin into db
-        conn.execute('INSERT INTO Admins (email, role) VALUES (?, ?)', (email, data.get('role')))
+        conn.execute('INSERT INTO Admins (email, position) VALUES (?, ?)', (email, data.get('position')))
         conn.commit()
 
     # hash the password
