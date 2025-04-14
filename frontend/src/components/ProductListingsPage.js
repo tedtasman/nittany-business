@@ -56,6 +56,27 @@ export default function ProductListingsPage() {
             .then((res) => res.json())
             .then((data) => setCategories(data))
             .catch((err) => console.error("Categories fetch error:", err));
+
+        fetch('http://127.0.0.1:5000/api/get-cart', {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            }
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return res.json();
+            })
+            .then((data) => {
+                setCart(data);
+            })
+            .catch((error) => {
+                console.error("Error fetching cart:", error);
+            });
+
     }, []);
 
     useEffect(() => {
@@ -66,18 +87,36 @@ export default function ProductListingsPage() {
 
 }, [selectedCategory]);
 
-    const parsePrice = (price) => parseFloat(price.replace(/[^0-9.-]+/g, ""));
-
     const sortProducts = (products) => {
         if (sortOption === "priceAsc") {
-            return products.sort((a, b) => parsePrice(a.Product_Price) - parsePrice(b.Product_Price));
+            return products.sort((a, b) => a.Product_Price - b.Product_Price);
         } else if (sortOption === "priceDesc") {
-            return products.sort((a, b) => parsePrice(b.Product_Price) - parsePrice(a.Product_Price));
+            return products.sort((a, b) => b.Product_Price - a.Product_Price);
         }
         return products;
     };
     const removeFromCart = (indexToRemove) => {
         setCart(cart.filter((_, index) => index !== indexToRemove));
+        fetch('http://127.0.0.1:5000/api/remove-from-cart/', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({ email: userData.email, listing_id: cart[indexToRemove].Listing_ID })
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return res.json();
+            })
+            .then((data) => {
+                console.log("Product removed from cart:", data);
+            })
+            .catch((error) => {
+                console.error("Error removing product from cart:", error);
+        })
     };
     const placeOrder = async () => {
     try {
@@ -109,7 +148,7 @@ export default function ProductListingsPage() {
     const matchesName = product.Product_Name.toLowerCase().includes(searchProductName.toLowerCase());
     const matchesID = product.Listing_ID.toString().includes(searchListingID);
 
-    const price = parsePrice(product.Product_Price);
+    const price = product.Product_Price;
     const meetsMin = minPrice === "" || price >= parseFloat(minPrice);
     const meetsMax = maxPrice === "" || price <= parseFloat(maxPrice);
 
@@ -132,7 +171,7 @@ export default function ProductListingsPage() {
         setSelectedProduct(null);
     };
     const handleAddToCart = () => {
-        alert(`Added ${quantity} ${selectedProduct.Product_Name} with id of ${selectedProduct.Listing_ID} to cart!`);
+
         const existing = cart.find(item => item.Listing_ID === selectedProduct.Listing_ID);
         let updatedCart;
 
@@ -146,7 +185,29 @@ export default function ProductListingsPage() {
             updatedCart = [...cart, { ...selectedProduct, quantity }];
         }
 
+        fetch('http://127.0.0.1:5000/api/add-to-cart/', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({ email: userData.email, listing_id: selectedProduct.Listing_ID, quantity: quantity })
+        })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return res.json();
+            })
+            .then((data) => {
+                console.log("Product added to cart:", data);
+            })
+            .catch((error) => {
+                console.error("Error adding product to cart:", error);
+            })
+
         setCart(updatedCart);
+        alert(`Added ${quantity} ${selectedProduct.Product_Name} with id of ${selectedProduct.Listing_ID} to cart!`);
         closeModal();
     };
 
@@ -384,8 +445,8 @@ export default function ProductListingsPage() {
                                                     <tr key={index}>
                                                         <td>{item.Product_Name}</td>
                                                         <td>{item.quantity}</td>
-                                                        <td>{item.Product_Price}</td>
-                                                        <td>${(parsePrice(item.Product_Price) * item.quantity).toFixed(2)}</td>
+                                                        <td>${item.Product_Price.toFixed(2)}</td>
+                                                        <td>${(item.Product_Price * item.quantity).toFixed(2)}</td>
                                                         <td>
                                                             <button onClick={() => removeFromCart(index)} className="btn-red">
                                                                 Remove
@@ -395,7 +456,7 @@ export default function ProductListingsPage() {
                                                 ))}
                                             </tbody>
                                         </table>
-                                        <p><strong>Total Cost:</strong> ${cart.reduce((acc, item) => acc + (parsePrice(item.Product_Price) * item.quantity), 0).toFixed(2)}</p>
+                                        <p><strong>Total Cost:</strong> ${cart.reduce((acc, item) => acc + (item.Product_Price * item.quantity), 0).toFixed(2)}</p>
                                         <div className={'cart-controls'}>
                                             <button className="btn-secondary" onClick={placeOrder}>Place Order</button>
                                             <button className="btn" onClick={() => setIsCartOpen(false)}>Close</button>

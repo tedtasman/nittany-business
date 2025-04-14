@@ -35,7 +35,13 @@ export default function BrowseRequestsPage() {
                 console.error(error);
             });
 
-        fetch("http://127.0.0.1:5000/api/get-requests")
+        fetch("http://127.0.0.1:5000/api/get-requests", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            }
+        })
             .then(response => {
                 if (response.ok) {
                     return response.json();
@@ -56,7 +62,13 @@ export default function BrowseRequestsPage() {
     const handleViewRequest = (requestId) => {
 
         // Logic to view request details
-        fetch(`http://127.0.0.1:5000/api/get-request/${requestId}`)
+        fetch(`http://127.0.0.1:5000/api/get-request/${requestId}`, {
+            method: "GET",
+            headers: {
+                'Content-Type': "application/json",
+                'Authorization': `Bearer ${localStorage.getItem("token")}`
+            }
+        })
             .then(response => response.json())
             .then(data => {
                 setSelectedRequest(data)
@@ -66,6 +78,7 @@ export default function BrowseRequestsPage() {
                         method: "PUT",
                         headers: {
                             "Content-Type": "application/json",
+                            'Authorization': `Bearer ${localStorage.getItem("token")}`
                         },
                         body: JSON.stringify({status: "Viewed"})
                     })
@@ -86,7 +99,13 @@ export default function BrowseRequestsPage() {
 
     const closeModal = () => {
         // reload requests
-        fetch("http://127.0.0.1:5000/api/get-requests")
+        fetch("http://127.0.0.1:5000/api/get-requests", {
+            method: "GET",
+            headers: {
+                'Content-Type': "application/json",
+                'Authorization': `Bearer ${localStorage.getItem("token")}`
+            }
+        })
             .then(response => {
                 if (response.ok) {
                     return response.json();
@@ -125,6 +144,7 @@ export default function BrowseRequestsPage() {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
+                'Authorization': `Bearer ${localStorage.getItem("token")}`
             },
             body: JSON.stringify({status: "Completed"})
         })

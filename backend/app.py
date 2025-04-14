@@ -181,7 +181,7 @@ def get_subcategories():
         print("Error fetching categories:", e)
         return jsonify({'error': 'Database query failed'}), 500
 
-@jwt_required
+
 @app.route("/api/place-order", methods=["POST"])
 def place_order():
     data = request.get_json()
@@ -343,8 +343,9 @@ def register():
 
     return jsonify({"msg": "User created successfully"}), 201
 
-@jwt_required()
+
 @app.route('/api/post-requests', methods=['POST'])
+@jwt_required()
 def post_request():
     # receive request type and email
     data = request.get_json()
@@ -379,8 +380,9 @@ def post_request():
     conn.close()
     return jsonify({"msg": "Request received successfully"}), 200
 
-@jwt_required()
+
 @app.route('/api/get-requests', methods=['GET'])
+@jwt_required()
 def get_requests():
     # connect to db
     conn = get_db_connection()
@@ -403,8 +405,9 @@ def get_requests():
 
     return jsonify(request_list), 200
 
-@jwt_required()
+
 @app.route('/api/get-request/<request_id>', methods=['GET'])
+@jwt_required()
 def get_request(request_id):
 
     conn = get_db_connection()
@@ -436,8 +439,9 @@ def get_request(request_id):
 
     return jsonify(response), 200
 
-@jwt_required()
+
 @app.route('/api/update-request/<request_id>', methods=['PUT'])
+@jwt_required()
 def update_request(request_id):
     data = request.get_json()
     status = data.get('status')
@@ -456,6 +460,100 @@ def update_request(request_id):
 
     return jsonify({"msg": "Request updated successfully"}), 200
 
+
+
+@app.route('/api/add-to-cart/', methods=['PUT'])
+@jwt_required()
+def add_to_cart():
+    data = request.get_json()
+    email = data.get('email')
+    listing_id = data.get('listing_id')
+    quantity = data.get('quantity')
+
+    # connect to db
+    conn = get_db_connection()
+    # check if user exists
+    user = conn.execute('SELECT * FROM Buyers WHERE email = ?', (email,)).fetchone()
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
+    # check if product exists
+    product = conn.execute('SELECT * FROM Product_Listings WHERE Listing_ID = ?', (listing_id,)).fetchone()
+    if not product:
+        return jsonify({"msg": "Product not found"}), 404
+
+    # check if quantity is valid
+    stock = product['Quantity']
+    if quantity > stock or quantity <= 0:
+        return jsonify({"msg": "Not enough stock"}), 400
+
+    # check if product is already in cart
+    existing_cart_item = conn.execute('SELECT * FROM Cart_Item WHERE Email = ? AND product_id = ?', (email, listing_id)).fetchone()
+
+    if existing_cart_item:
+        # update quantity if already in cart
+        new_quantity = existing_cart_item['Quantity'] + quantity
+        conn.execute('UPDATE Cart_Item SET Quantity = ? WHERE Email = ? AND product_id = ?', (new_quantity, email, listing_id))
+
+    else:
+        # insert new cart item
+        conn.execute('INSERT INTO Cart_Item (Email, product_id, Quantity) VALUES (?, ?, ?)', (email, listing_id, quantity))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Product added to cart successfully"}), 200
+
+
+@app.route('/api/remove-from-cart/', methods=['PUT'])
+@jwt_required()
+def remove_from_cart():
+    data = request.get_json()
+    email = data.get('email')
+    listing_id = data.get('listing_id')
+    # connect to db
+    conn = get_db_connection()
+    # get cart item from db
+    cart_item = conn.execute('SELECT * FROM Cart_Item WHERE Email = ? AND product_id = ?', (email, listing_id)).fetchone()
+    if not cart_item:
+        return jsonify({"msg": "Cart item not found"}), 404
+    # remove cart item from db
+    conn.execute('DELETE FROM Cart_Item WHERE Email = ? AND product_id = ?', (email, listing_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"msg": "Product removed from cart successfully"}), 200
+
+
+
+@app.route('/api/get-cart', methods=['GET'])
+@jwt_required()
+def get_cart():
+    # get email from jwt
+    email = get_jwt_identity()
+    # connect to db
+    conn = get_db_connection()
+    # get cart items from db
+    cart_items = conn.execute('SELECT * FROM Cart_Item WHERE Email = ?', (email,)).fetchall()
+    conn.close()
+    cart_list = []
+    for item in cart_items:
+        conn = get_db_connection()
+        product = conn.execute('SELECT * FROM Product_Listings WHERE Listing_ID = ?', (item['product_id'],)).fetchone()
+        conn.close()
+        if product:
+            cart_list.append({
+                'Listing_ID': product['Listing_ID'],
+                'Product_Title': product['Product_Title'],
+                'Product_Name': product['Product_Name'],
+                'quantity': item['Quantity'],
+                'Product_Price': product['Product_Price'],
+                'Category': product['Category'],
+                'Product_Description': product['Product_Description'],
+                'Status': product['Status'],
+                'Seller_Email': product['Seller_Email'],
+            })
+
+    return jsonify(cart_list), 200
 
 def get_address_from_id(address_id):
     conn = get_db_connection()
