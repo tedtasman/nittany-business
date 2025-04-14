@@ -6,6 +6,7 @@ import RegisterPage from "./components/RegisterPage";
 import ProductListingsPage from "./components/ProductListingsPage";
 import RequestsPage from "./components/RequestsPage";
 import BrowseRequestsPage from "./components/BrowseRequestsPage";
+import SellerListingsPage from "./components/SellerListingsPage";
 
 function App() {
 
@@ -19,6 +20,7 @@ function App() {
                 <Route path="/product-listings" element={<ProductListingsPage />} />
                 <Route path="/request" element={<RequestsPage />} />
                 <Route path="/requests" element={<BrowseRequestsPage />} />
+                <Route path="/seller-listings" element={<SellerListingsPage />} />
             </Routes>
         </Router>
     );

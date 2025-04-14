@@ -566,6 +566,64 @@ def get_cart():
 
     return jsonify(cart_list), 200
 
+
+@app.route('/api/seller-listings', methods=['GET'])
+@jwt_required()
+def get_seller_listings():
+    # get email from jwt
+    email = get_jwt_identity()
+    # connect to db
+    conn = get_db_connection()
+    # check if user is a seller
+    seller = conn.execute('SELECT * FROM Sellers WHERE email = ?', (email,)).fetchone()
+    if not seller:
+        return jsonify({"msg": "User is not a seller"}), 401
+    # get seller listings from db
+    listings = conn.execute('SELECT * FROM Product_Listings WHERE Seller_Email = ?', (email,)).fetchall()
+    conn.close()
+    listing_list = []
+    for listing in listings:
+        listing_list.append({
+            'Listing_ID': listing['Listing_ID'],
+            'Product_Title': listing['Product_Title'],
+            'Product_Name': listing['Product_Name'],
+            'Category': listing['Category'],
+            'Product_Description': listing['Product_Description'],
+            'Quantity': listing['Quantity'],
+            'Product_Price': listing['Product_Price'],
+            'Status': listing['Status']
+        })
+
+    return jsonify(listing_list), 200
+
+
+@app.route('/api/update-listing', methods=['PUT'])
+@jwt_required()
+def update_listing():
+    data = request.get_json()
+    listing_id = data.get('listing_id')
+    product_title = data.get('product_title')
+    product_name = data.get('product_name')
+    product_description = data.get('product_description')
+    quantity = data.get('quantity')
+    product_price = data.get('product_price')
+
+    if int(quantity) > 0:
+        status = 1
+    else:
+        status = 0
+
+    # connect to db
+    conn = get_db_connection()
+    # update listing in db
+    conn.execute('UPDATE Product_Listings SET Product_Title = ?, Product_Name = ?, Product_Description = ?, Quantity = ?, Product_Price = ?, Status = ? WHERE Listing_ID = ?',
+                 (product_title, product_name, product_description, quantity, product_price, status, listing_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Listing updated successfully"}), 200
+
+
 def get_address_from_id(address_id):
     conn = get_db_connection()
     address = conn.execute('SELECT * FROM Address WHERE address_id = ?', (address_id,)).fetchone()

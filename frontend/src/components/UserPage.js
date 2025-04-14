@@ -76,8 +76,8 @@ export default function UserPage() {
                     <p className={"centered"}>{userData.email} - {userData.address.street_number} {userData.address.street_name}, {userData.address.zipcode}</p>
                     <p className="centered">{userData.bank_account_number} - {userData.bank_routing_number}</p>
                     <div className="links">
-                        <Link to="/user-page" className="btn">
-                            Placeholder
+                        <Link to="/seller-listings" className="btn">
+                            View Listings
                         </Link>
                         <RequestButton/>
                         <LogOutButton/>
