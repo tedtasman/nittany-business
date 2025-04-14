@@ -183,9 +183,11 @@ def get_subcategories():
 
 
 @app.route("/api/place-order", methods=["POST"])
+@jwt_required()
 def place_order():
     data = request.get_json()
     cart = data.get("cart", [])
+    email = get_jwt_identity()
 
     if not cart:
         return jsonify({"error": "Cart is empty"}), 400
@@ -198,24 +200,33 @@ def place_order():
             listing_id = item["Listing_ID"]
             ordered_qty = item["quantity"]
 
+            # Check if the product exists
             cursor.execute("SELECT Quantity FROM Product_Listings WHERE Listing_ID = ?", (listing_id,))
             row = cursor.fetchone()
-
             if not row:
                 return jsonify({"error": f"Product with ID {listing_id} not found"}), 404
 
+            # Check if the quantity is valid
             current_qty = row[0]
-
             if ordered_qty > current_qty:
                 return jsonify({"error": f"Not enough stock for Listing ID {listing_id}"}), 400
 
+            # Insert order into Orders table
+            total_price = ordered_qty * item["Product_Price"]
+            date = datetime.datetime.now()
+            cursor.execute('INSERT INTO Orders (user_email, product_id, order_date, Quantity, total_price, status) VALUES (?, ?, ?, ?, ?, ?)',
+                           (email, listing_id, date, ordered_qty, total_price, "Pending"))
+
+            # Update the product quantity and status
             new_qty = current_qty - ordered_qty
             new_status = 0 if new_qty == 0 else 1
-
             cursor.execute(
                 "UPDATE Product_Listings SET Quantity = ?, Status = ? WHERE Listing_ID = ?",
                 (new_qty, new_status, listing_id)
             )
+
+            # Remove the item from the cart
+            cursor.execute("DELETE FROM Cart_Item WHERE Email = ? AND product_id = ?", (email, listing_id))
 
         conn.commit()
         return jsonify({"message": "Order placed successfully"}), 200
