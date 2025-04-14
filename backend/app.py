@@ -21,13 +21,58 @@ def get_db_connection():
 def hello():
     return jsonify({"message": "Hello from Flask!"})
 
+
 @app.route('/api/protected', methods=['GET'])
 @jwt_required()
 def protected():
-    # get current user
-    current_user = get_jwt_identity()
-    # return email
-    return jsonify(email=current_user), 200
+    user_email = get_jwt_identity()
+    conn = get_db_connection()
+    buyer = conn.execute('SELECT * FROM Buyers WHERE email = ?', (user_email,)).fetchone()
+    seller = conn.execute('SELECT * FROM Sellers WHERE email = ?', (user_email,)).fetchone()
+    admin = conn.execute('SELECT * FROM Admins WHERE email = ?', (user_email,)).fetchone()
+
+    if buyer:
+        address = get_address_from_id(buyer['buyer_address_id'])
+        user_data = {
+            'email': buyer['email'],
+            'user_type': 'Buyer',
+            'business_name': buyer['business_name'],
+            'address': {
+                'street_number': address['street_num'],
+                'street_name': address['street_name'],
+                'zipcode': address['zipcode']
+            }
+        }
+        return jsonify(user_data), 200
+
+    elif seller:
+        address = get_address_from_id(seller['business_address_id'])
+        user_data = {
+            'email': seller['email'],
+            'user_type': 'Seller',
+            'business_name': seller['business_name'],
+            'bank_routing_number': seller['bank_routing_number'],
+            'bank_account_number': seller['bank_account_number'],
+            'balance': seller['balance'],
+            'address': {
+                'street_number': address['street_num'],
+                'street_name': address['street_name'],
+                'zipcode': address['zipcode']
+            }
+        }
+        return jsonify(user_data), 200
+
+    elif admin:
+        user_data = {
+            'email': admin['email'],
+            'user_type': 'HelpDesk',
+            'position': admin['position']
+        }
+        return jsonify(user_data), 200
+
+    else:
+        return jsonify({"msg": "User type not defined"}), 401
+
 
 @app.route('/api/products', methods=['GET'])
 def get_products():
@@ -57,6 +102,7 @@ def get_products():
     except Exception as e:
         print("Error fetching products:", e)
         return jsonify({'error': 'Database query failed'}), 500
+
 
 @app.route('/api/parent_category/<child>', methods=['GET'])
 def get_parent_categories(child):
@@ -214,7 +260,7 @@ def register():
 
     # check if user_type is valid
     if user_type not in ['buyer', 'seller', 'admin']:
-        return jsonify({"msg": f"nvalid user type: {user_type}, {email}, {password}"}), 400
+        return jsonify({"msg": f"invalid user type: {user_type}, {email}, {password}"}), 400
 
     # check address
     if user_type == 'buyer' or user_type == 'seller':
@@ -250,7 +296,7 @@ def register():
     # for admins:
     if user_type == 'admin':
         # insert new admin into db
-        conn.execute('INSERT INTO Admins (email, role) VALUES (?, ?)', (email, data.get('role')))
+        conn.execute('INSERT INTO Admins (email, position) VALUES (?, ?)', (email, data.get('position')))
         conn.commit()
 
     # hash the password
@@ -263,6 +309,17 @@ def register():
 
     return jsonify({"msg": "User created successfully"}), 201
 
+
+
+def get_address_from_id(address_id):
+    conn = get_db_connection()
+    address = conn.execute('SELECT * FROM Address WHERE address_id = ?', (address_id,)).fetchone()
+    conn.close()
+    return {
+        'street_num': address['street_num'],
+        'street_name': address['street_name'],
+        'zipcode': address['zipcode']
+    }
 
 
 

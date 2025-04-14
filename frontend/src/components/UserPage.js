@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {Link} from "react-router-dom";
+import {Link, redirect} from "react-router-dom";
 import "../App.css"
 import NoTokenPage from "./NoTokenPage";
 
@@ -7,7 +7,7 @@ export default function UserPage() {
 
     // User States
     const [userData, setUserData] = useState(null);
-    const [isBuyer, setIsBuyer] = useState(false);
+    const [userType, setUserType] = useState(null);
 
     // UseEffect to get user data and verify token
     useEffect(() => {
@@ -39,25 +39,7 @@ export default function UserPage() {
             .then(data => {
                 setUserData(data);
                 console.log("User Data: ", data);
-
-                //set isBuyer
-                fetch(`http://127.0.0.1:5000/api/is_buyer?email=${encodeURIComponent(data.email)}`)
-                  .then(res => {
-                    if (!res.ok) {
-                        throw new Error("Failed to fetch buyer status");
-                    }
-                    return res.json();
-                  })
-                  .then(resData => {
-                      console.log("Buyer status:", resData); // 👀 Console log result
-                    if (resData.is_buyer) {
-                        setIsBuyer(true);
-                    }
-                  })
-                  .catch(err => {
-                    console.error("Error checking buyer status:", err);
-                  });
-
+                setUserType(data.user_type);
             })
 
             // catch error
@@ -66,24 +48,63 @@ export default function UserPage() {
             });
     }, []);
 
-    return(
-        <>
-            {userData ? (
-                <>
-                    <div className="wrapper">
-                        <h1 className="header">User Page</h1>
-                        <p className={"centered"}>Email: {userData.email}</p>
-                        {isBuyer && (
-                            <Link to="/product-listings" className="btn">
-                                Product Listings
-                            </Link>
-    )}
+    if (userType === "Buyer") {
+        return (
+            <>
+                <div className="wrapper">
+                    <h1 className="header">Buyer's Page</h1>
+                    <h3 className={"header"}>{userData.business_name}</h3>
+                    <p className={"centered"}>{userData.email} - {userData.address.street_number} {userData.address.street_name}, {userData.address.zipcode}</p>
+                    <div className="links">
+                        <Link to="/product-listings" className="btn">
+                            Product Listings
+                        </Link>
+                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
                     </div>
-                </>
-            ) :
-            (
-                <NoTokenPage />
-            )}
-        </>
-    );
+                </div>
+            </>
+        )
+    }
+    else if (userType === "Seller") {
+        return (
+            <>
+                <div className="wrapper">
+                    <h1 className="header">Seller's Page</h1>
+                    <h3 className={"header"}>{userData.business_name}</h3>
+                    <h5 className={"centered"}>Balance: ${userData.balance}</h5>
+                    <p className={"centered"}>{userData.email} - {userData.address.street_number} {userData.address.street_name}, {userData.address.zipcode}</p>
+                    <p className="centered">{userData.bank_account_number} - {userData.bank_routing_number}</p>
+                    <div className="links">
+                        <Link to="/user-page" className="btn">
+                            Placeholder
+                        </Link>
+                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
+                    </div>
+                </div>
+            </>
+        )
+    }
+    else if (userType === "HelpDesk") {
+        return (
+            <>
+                <div className="wrapper">
+                    <h1 className="header">Admin's Page</h1>
+                    <h3 className={"header"}>{userData.position}</h3>
+                    <p className={"centered"}>{userData.email}</p>
+                    <div className="links">
+                        <Link to="/user-page" className="btn">
+                            Placeholder
+                        </Link>
+                        <Link to="/" className="btn-red" onClick={() => localStorage.removeItem("token")}>Logout</Link>
+                    </div>
+                </div>
+            </>
+        )
+    }
+}
+
+
+
+const logout = () => {
+    localStorage.removeItem("token");
 }
