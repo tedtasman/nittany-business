@@ -181,7 +181,7 @@ def get_subcategories():
         print("Error fetching categories:", e)
         return jsonify({'error': 'Database query failed'}), 500
 
-
+@jwt_required
 @app.route("/api/place-order", methods=["POST"])
 def place_order():
     data = request.get_json()
@@ -343,8 +343,9 @@ def register():
 
     return jsonify({"msg": "User created successfully"}), 201
 
+@jwt_required()
 @app.route('/api/post-requests', methods=['POST'])
-def receive_request():
+def post_request():
     # receive request type and email
     data = request.get_json()
     request_type = data.get('request_type')
@@ -367,7 +368,7 @@ def receive_request():
         return jsonify({"msg": "Invalid request type"}), 400
 
     date = datetime.datetime.now()
-    status = "new"
+    status = "New"
 
     # connect to db
     conn = get_db_connection()
@@ -377,6 +378,83 @@ def receive_request():
     conn.commit()
     conn.close()
     return jsonify({"msg": "Request received successfully"}), 200
+
+@jwt_required()
+@app.route('/api/get-requests', methods=['GET'])
+def get_requests():
+    # connect to db
+    conn = get_db_connection()
+    # get requests from db
+    requests = conn.execute('SELECT * FROM Requests WHERE Status <> "Completed"').fetchall()
+    conn.close()
+
+    request_list = []
+
+    for req in requests:
+
+        request_data = {
+            'request_id': req['id'],
+            'user_email': req['user_email'],
+            'request_type': req['request_type'],
+            'request_date': req['request_date'],
+            'status': req['status'],
+        }
+        request_list.append(request_data)
+
+    return jsonify(request_list), 200
+
+@jwt_required()
+@app.route('/api/get-request/<request_id>', methods=['GET'])
+def get_request(request_id):
+
+    conn = get_db_connection()
+    req = conn.execute('SELECT * FROM Requests WHERE id = ?', (request_id,)).fetchone()
+    conn.close()
+
+    response = {'request_id': req['id'],
+                'request_type': req['request_type'],
+                'request_date': req['request_date'],
+                'status': req['status'],
+                'email': req["user_email"]
+                }
+
+    if req['request_type'] == "Email Change":
+        response["new_email"] = req["primary_content"]
+
+    elif req['request_type'] == "Order Issue":
+        response["order_id"] = req["primary_content"]
+        response['issue'] = req["secondary_content"]
+
+    elif req['request_type'] == "Category Suggestion":
+        response["category_name"] = req["primary_content"]
+        secondary_content = req["secondary_content"].split("\n")
+        response['parent_category'] = secondary_content[0].split(": ")[1]
+        response['description'] = secondary_content[1].split(": ")[1]
+        response['reason'] = secondary_content[2].split(": ")[1]
+    else:
+        return jsonify({"msg": "Invalid request type"}), 400
+
+    return jsonify(response), 200
+
+@jwt_required()
+@app.route('/api/update-request/<request_id>', methods=['PUT'])
+def update_request(request_id):
+    data = request.get_json()
+    status = data.get('status')
+
+    # connect to db
+    conn = get_db_connection()
+
+    req = conn.execute('SELECT * FROM Requests WHERE id = ?', (request_id,)).fetchone()
+    if not req:
+        return jsonify({"msg": "Request not found"}), 404
+
+    # update request in db
+    conn.execute('UPDATE Requests SET status = ? WHERE id = ?', (status, request_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Request updated successfully"}), 200
 
 
 def get_address_from_id(address_id):

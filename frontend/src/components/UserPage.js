@@ -94,8 +94,8 @@ export default function UserPage() {
                     <h3 className={"header"}>{userData.position}</h3>
                     <p className={"centered"}>{userData.email}</p>
                     <div className="links">
-                        <Link to="/user-page" className="btn">
-                            Placeholder
+                        <Link to="/requests" className="btn">
+                            Browse Requests
                         </Link>
                         <LogOutButton/>
                     </div>
