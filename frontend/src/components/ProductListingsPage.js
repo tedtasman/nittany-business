@@ -359,7 +359,7 @@ export default function ProductListingsPage() {
                                 {currentProducts.map((product) => (
                                     <tr key={product.Listing_ID}>
                                         <td>{product.Listing_ID}</td>
-                                        <td>{product.Product_Name}</td>
+                                        <td>{product.Product_Title} {product.Product_Name}</td>
                                         <td>${product.Product_Price.toFixed(2)}</td>
                                         <td>{product.Status ? "Available" : "Out of Stock"}</td>
                                         <td>
@@ -443,7 +443,7 @@ export default function ProductListingsPage() {
                                             <tbody>
                                                 {cart.map((item, index) => (
                                                     <tr key={index}>
-                                                        <td>{item.Product_Name}</td>
+                                                        <td>{item.Product_Title} {item.Product_Name}</td>
                                                         <td>{item.quantity}</td>
                                                         <td>${item.Product_Price.toFixed(2)}</td>
                                                         <td>${(item.Product_Price * item.quantity).toFixed(2)}</td>
