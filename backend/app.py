@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, creat
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
+import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -342,6 +343,40 @@ def register():
 
     return jsonify({"msg": "User created successfully"}), 201
 
+@app.route('/api/post-requests', methods=['POST'])
+def receive_request():
+    # receive request type and email
+    data = request.get_json()
+    request_type = data.get('request_type')
+    email = data.get('email')
+
+    # parse request data
+    if request_type == 'Email Change':
+        primary_content = data.get('new_email')
+        secondary_content = None
+    elif request_type == 'Order Issue':
+        primary_content = data.get('order_id')
+        secondary_content = data.get('issue')
+    elif request_type == 'Category Suggestion':
+        primary_content = data.get('category_name')
+        parent_category = data.get('parent_category')
+        description = data.get('description')
+        reason = data.get('reason')
+        secondary_content = f'Parent Category: {parent_category}\nDescription: {description}\nReason: {reason}'
+    else:
+        return jsonify({"msg": "Invalid request type"}), 400
+
+    date = datetime.datetime.now()
+    status = "new"
+
+    # connect to db
+    conn = get_db_connection()
+    # insert request into db
+    conn.execute('INSERT INTO Requests (user_email, request_type, request_date, status, primary_content, secondary_content) VALUES (?, ?, ?, ?, ?, ?)',
+                 (email, request_type, date, status, primary_content, secondary_content))
+    conn.commit()
+    conn.close()
+    return jsonify({"msg": "Request received successfully"}), 200
 
 
 def get_address_from_id(address_id):
@@ -353,6 +388,7 @@ def get_address_from_id(address_id):
         'street_name': address['street_name'],
         'zipcode': address['zipcode']
     }
+
 
 
 
