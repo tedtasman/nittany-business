@@ -59,6 +59,9 @@ export default function UserPage() {
                         <Link to="/product-listings" className="btn">
                             Product Listings
                         </Link>
+                        <Link to="/edit-user" className="btn">
+                            Edit Profile
+                        </Link>
                         <RequestButton/>
                         <LogOutButton/>
                     </div>
