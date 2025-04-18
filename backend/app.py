@@ -74,6 +74,82 @@ def protected():
     else:
         return jsonify({"msg": "User type not defined"}), 401
 
+@app.route('/api/update-user', methods=['PUT'])
+def update_user():
+    try:
+        data = request.get_json()
+        user_type = data.get('user_type')
+        original_email = data.get('original_email')
+        email = data.get('email')
+        password = data.get('password')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Update Users table (email and password if provided)
+        update_users_query = 'UPDATE Users SET email = ?'
+        update_users_params = [email]
+        if password:
+            update_users_query += ', password = ?'
+            update_users_params.append(generate_password_hash(password))
+        update_users_query += ' WHERE email = ?'
+        update_users_params.append(original_email)
+        cursor.execute(update_users_query, update_users_params)
+
+        # Handle address for Buyer or Seller
+        address_id = None
+        if user_type in ['Buyer', 'Seller']:
+            zip_code = int(data.get('zip_code'))
+            street_number = int(data.get('street_number'))
+            street_name = data.get('street_name')
+
+            # Check if address exists
+            address_row = cursor.execute(
+                'SELECT address_id FROM Address WHERE zipcode = ? AND street_num = ? AND street_name = ?',
+                (zip_code, street_number, street_name)
+            ).fetchone()
+
+            if not address_row:
+                # Insert new address
+                new_address_id = str(uuid.uuid4()).replace('-', '')
+                cursor.execute(
+                    'INSERT INTO Address (address_id, zipcode, street_num, street_name) VALUES (?, ?, ?, ?)',
+                    (new_address_id, zip_code, street_number, street_name)
+                )
+                address_id = new_address_id
+            else:
+                address_id = address_row['address_id']
+
+        # Update specific table based on user_type
+        if user_type == 'Buyer':
+            cursor.execute(
+                'UPDATE Buyers SET email = ?, business_name = ?, buyer_address_id = ? WHERE email = ?',
+                (email, data.get('business_name'), address_id, original_email)
+            )
+
+        elif user_type == 'Seller':
+            cursor.execute(
+                'UPDATE Sellers SET email = ?, business_name = ?, business_address_id = ?, bank_routing_number = ?, bank_account_number = ? WHERE email = ?',
+                (email, data.get('business_name'), address_id, data.get('bank_routing_number'),
+                 data.get('bank_account_number'), original_email)
+            )
+
+        elif user_type == 'HelpDesk':
+            cursor.execute(
+                'UPDATE Admins SET email = ?, position = ? WHERE email = ?',
+                (email, data.get('position'), original_email)
+            )
+
+        # Generate a new JWT with the updated email
+        new_token = create_access_token(identity=email)
+
+        conn.commit()
+        conn.close()
+        return jsonify({'message': 'User updated successfully', 'new_token': new_token}), 200
+
+    except Exception as e:
+        print("Error updating user:", e)
+        return jsonify({'error': 'Database update failed'}), 500
 
 @app.route('/api/products', methods=['GET'])
 def get_products():
