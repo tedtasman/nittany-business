@@ -7,6 +7,7 @@ import ProductListingsPage from "./components/ProductListingsPage";
 import RequestsPage from "./components/RequestsPage";
 import BrowseRequestsPage from "./components/BrowseRequestsPage";
 import SellerListingsPage from "./components/SellerListingsPage";
+import EditUserPage from "./components/EditUserPage";
 
 function App() {
 
@@ -21,6 +22,7 @@ function App() {
                 <Route path="/request" element={<RequestsPage />} />
                 <Route path="/requests" element={<BrowseRequestsPage />} />
                 <Route path="/seller-listings" element={<SellerListingsPage />} />
+                <Route path="/edit-user" element={<EditUserPage />} />
             </Routes>
         </Router>
     );
