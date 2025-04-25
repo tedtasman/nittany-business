@@ -134,6 +134,79 @@ export default function SellerListingsPage() {
 
         closeModal();
     }
+    const promoteProduct = async (listingId) => {
+        const token = localStorage.getItem("token");
+    
+        const res = await fetch("http://127.0.0.1:5000/api/promote-product", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ listing_id: listingId })
+        });
+    
+        const data = await res.json();
+        if (res.ok) {
+            alert(`🎉 ${data.msg} Promotion fee: $${data.fee}`);
+    
+            // Refresh listings
+            const updated = await fetch("http://127.0.0.1:5000/api/seller-listings", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            const refreshedListings = await updated.json();
+            setListings(refreshedListings);
+        } else {
+            alert(`❌ Promotion failed: ${data.msg || "Unknown error"}`);
+        }
+    };
+
+    const createListing = async () => {
+        const token = localStorage.getItem("token");
+      
+        const response = await fetch("http://127.0.0.1:5000/api/create-listing", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            product_title: newProductTitle,
+            product_name: newProductName,
+            product_description: newProductDescription,
+            quantity: newProductQuantity,
+            product_price: newProductPrice
+          })
+        });
+      
+        const data = await response.json();
+        if (response.ok) {
+          alert("Listing created!");
+      
+          // Clear form fields
+          setNewProductTitle("");
+          setNewProductName("");
+          setNewProductDescription("");
+          setNewProductQuantity("");
+          setNewProductPrice("");
+      
+          // Refresh listings
+          fetch("http://127.0.0.1:5000/api/seller-listings", {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          })
+            .then(response => response.json())
+            .then(data => setListings(data));
+        } else {
+          alert("Error creating listing: " + data.msg);
+        }
+      };
+      
+    
 
     if (!userData) {
         return <NoTokenPage />;
@@ -210,6 +283,53 @@ export default function SellerListingsPage() {
                         </div>
                     )}
                 <h1 className="header">Seller's Listings</h1>
+                <h2>Create New Listing</h2>
+                <form
+                className="create-listing-form"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    createListing();
+                }}
+                style={{ marginBottom: "30px" }}
+                >
+                <input
+                    type="text"
+                    placeholder="Product Title"
+                    value={newProductTitle}
+                    onChange={(e) => setNewProductTitle(e.target.value)}
+                    required
+                />
+                <input
+                    type="text"
+                    placeholder="Product Name"
+                    value={newProductName}
+                    onChange={(e) => setNewProductName(e.target.value)}
+                    required
+                />
+                <input
+                    type="text"
+                    placeholder="Category"
+                    value={newProductDescription}
+                    onChange={(e) => setNewProductDescription(e.target.value)}
+                    required
+                />
+                <input
+                    type="number"
+                    placeholder="Quantity"
+                    value={newProductQuantity}
+                    onChange={(e) => setNewProductQuantity(e.target.value)}
+                    required
+                />
+                <input
+                    type="number"
+                    placeholder="Price"
+                    value={newProductPrice}
+                    onChange={(e) => setNewProductPrice(e.target.value)}
+                    required
+                />
+                <button className="btn" type="submit">Create Listing</button>
+                </form>
+
                 <div className="product-listings">
                     <table className="product-table">
                         <thead>
@@ -228,7 +348,14 @@ export default function SellerListingsPage() {
                                     <td>{listing.Product_Name} {listing.Product_Title}</td>
                                     <td>${listing.Product_Price}</td>
                                     <td>{listing.Quantity}</td>
-                                    <td><button className="btn" onClick={() => openModal(listing)}>View</button></td>
+                                    <td>
+                                    <button className="btn" onClick={() => openModal(listing)}>View</button>
+                                    {listing.Is_Promoted ? (
+                                        <span className="badge" style={{ marginLeft: "8px", color: "gold", fontWeight: "bold" }}>🌟 Promoted</span>
+                                    ) : (
+                                        <button className="btn-secondary" style={{ marginLeft: "8px" }} onClick={() => promoteProduct(listing.Listing_ID)}>Promote</button>
+                                    )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

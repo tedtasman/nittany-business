@@ -165,7 +165,11 @@ def get_products():
             query = f'SELECT * FROM Product_Listings WHERE Category IN ({placeholders})'
             products = conn.execute(query, categories_to_filter).fetchall()
         else:
-            products = conn.execute('SELECT * FROM Product_Listings').fetchall()
+            products = conn.execute('''
+            SELECT * FROM Product_Listings
+            ORDER BY Is_Promoted DESC, datetime(Promotion_Date) DESC
+            ''').fetchall()
+
 
         conn.close()
 
@@ -667,7 +671,8 @@ def get_seller_listings():
             'Product_Description': listing['Product_Description'],
             'Quantity': listing['Quantity'],
             'Product_Price': listing['Product_Price'],
-            'Status': listing['Status']
+            'Status': listing['Status'],
+            'Is_Promoted': listing['Is_Promoted']
         })
 
     return jsonify(listing_list), 200
@@ -699,6 +704,74 @@ def update_listing():
 
     return jsonify({"msg": "Listing updated successfully"}), 200
 
+@app.route('/api/promote-product', methods=['POST'])
+@jwt_required()
+def promote_product():
+    data = request.get_json()
+    listing_id = data.get('listing_id')
+    email = get_jwt_identity()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Verify product exists and is owned by the user
+    product = cursor.execute(
+        'SELECT * FROM Product_Listings WHERE Listing_ID = ? AND Seller_Email = ?',
+        (listing_id, email)
+    ).fetchone()
+
+    if not product:
+        return jsonify({"msg": "Product not found or unauthorized"}), 404
+
+    price = product['Product_Price']
+    fee = round(price * 0.05, 2)
+    now = datetime.datetime.now().isoformat()
+
+    cursor.execute('''
+        UPDATE Product_Listings
+        SET Is_Promoted = 1, Promotion_Fee = ?, Promotion_Date = ?
+        WHERE Listing_ID = ?
+    ''', (fee, now, listing_id))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Product promoted successfully", "fee": fee}), 200
+
+@app.route('/api/create-listing', methods=['POST'])
+@jwt_required()
+def create_listing():
+    data = request.get_json()
+    email = get_jwt_identity()
+
+    title = data.get('product_title')
+    name = data.get('product_name')
+    description = data.get('product_description')
+    quantity = int(data.get('quantity'))
+    price = float(data.get('product_price'))
+    status = 1 if quantity > 0 else 0
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            INSERT INTO Product_Listings (Seller_Email, Product_Title, Product_Name, Product_Description, Quantity, Product_Price, Category, Status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (email, title, name, description, quantity, price, 'Uncategorized', status))
+
+        conn.commit()
+        return jsonify({"msg": "Listing created"}), 201
+
+    except Exception as e:
+        print("Error creating listing:", e)
+        conn.rollback()
+        return jsonify({"msg": "Failed to create listing"}), 500
+
+    finally:
+        conn.close()
+
+
 
 def get_address_from_id(address_id):
     conn = get_db_connection()
@@ -712,6 +785,26 @@ def get_address_from_id(address_id):
 
 
 
+def add_promotion_columns():
+    conn = get_db_connection()
+    try:
+        conn.execute('ALTER TABLE Product_Listings ADD COLUMN Is_Promoted INTEGER DEFAULT 0')
+    except:
+        pass
+    try:
+        conn.execute('ALTER TABLE Product_Listings ADD COLUMN Promotion_Fee REAL')
+    except:
+        pass
+    try:
+        conn.execute('ALTER TABLE Product_Listings ADD COLUMN Promotion_Date TEXT')
+    except:
+        pass
+    conn.commit()
+    conn.close()
+
+# Uncomment this for one-time schema change
+
+add_promotion_columns()
 
 
 if __name__ == '__main__':
