@@ -8,6 +8,7 @@ export default function ProductListingsPage() {
     const [products, setProducts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [selectedReviewProduct, setSelectedReviewProduct] = useState(null);
     const [searchProductName, setSearchProductName] = useState("");
     const [searchListingID, setSearchListingID] = useState("");
     const [sortOption, setSortOption] = useState("none");
@@ -166,7 +167,7 @@ export default function ProductListingsPage() {
                     "Authorization": `Bearer ${localStorage.getItem("token")}`,
                 },
                 body: JSON.stringify({
-                    listing_id: selectedProduct.Listing_ID,
+                    listing_id: selectedReviewProduct.Listing_ID,
                     review: newReview,
                     rating: newRating
                 })
@@ -180,9 +181,9 @@ export default function ProductListingsPage() {
                 const res = await fetch(`http://127.0.0.1:5000/api/products?category=${encodeURIComponent(selectedCategory)}`);
                 const data = await res.json();
                 setProducts(data);
-                // Update selected product to reflect new reviews
-                const updatedProduct = data.find(p => p.Listing_ID === selectedProduct.Listing_ID);
-                setSelectedProduct(updatedProduct);
+                // Update selected review product to reflect new reviews
+                const updatedProduct = data.find(p => p.Listing_ID === selectedReviewProduct.Listing_ID);
+                setSelectedReviewProduct(updatedProduct);
             } else {
                 const errorData = await response.json();
                 alert(errorData.msg || "Error adding review.");
@@ -194,13 +195,16 @@ export default function ProductListingsPage() {
     };
 
     const filteredProducts = products.filter((product) => {
-        const matchesName = product.Product_Name.toLowerCase().includes(searchProductName.toLowerCase());
+        const searchText = searchProductName.toLowerCase();
+        const matchesNameOrTitle =
+            product.Product_Name.toLowerCase().includes(searchText) ||
+            product.Product_Title.toLowerCase().includes(searchText);
         const matchesID = product.Listing_ID.toString().includes(searchListingID);
         const price = product.Product_Price;
         const meetsMin = minPrice === "" || price >= parseFloat(minPrice);
         const meetsMax = maxPrice === "" || price <= parseFloat(maxPrice);
 
-        return matchesName && matchesID && meetsMin && meetsMax;
+        return matchesNameOrTitle && matchesID && meetsMin && meetsMax;
     });
 
     const sortedProducts = sortProducts(filteredProducts);
@@ -212,12 +216,21 @@ export default function ProductListingsPage() {
         console.log("Opening modal for product:", product);
         setSelectedProduct(product);
         setQuantity(1);
+    };
+
+    const openReviewModal = (product) => {
+        console.log("Opening review modal for product:", product);
+        setSelectedReviewProduct(product);
         setNewReview("");
         setNewRating(0);
     };
 
     const closeModal = () => {
         setSelectedProduct(null);
+    };
+
+    const closeReviewModal = () => {
+        setSelectedReviewProduct(null);
     };
 
     const handleAddToCart = () => {
@@ -330,11 +343,11 @@ export default function ProductListingsPage() {
                             </button>
                         </div>
                         <div className="search-bar">
-                            <label htmlFor="productName">Search by Product Name:</label>
+                            <label htmlFor="productName">Search by Product Name or Title:</label>
                             <input
                                 id="productName"
                                 type="text"
-                                placeholder="Enter Product Name"
+                                placeholder="Enter Product Name or Title"
                                 value={searchProductName}
                                 onChange={(e) => setSearchProductName(e.target.value)}
                             />
@@ -393,6 +406,7 @@ export default function ProductListingsPage() {
                                     <th>Product Price</th>
                                     <th>Status</th>
                                     <th>Actions</th>
+                                    <th>Reviews</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -405,6 +419,11 @@ export default function ProductListingsPage() {
                                         <td>
                                             <button onClick={() => openModal(product)} className="btn">
                                                 View
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button onClick={() => openReviewModal(product)} className="btn">
+                                                Reviews
                                             </button>
                                         </td>
                                     </tr>
@@ -436,51 +455,6 @@ export default function ProductListingsPage() {
                                 <p><strong>Available Quantity:</strong> {selectedProduct.Quantity}</p>
                                 <p><strong>Price:</strong> ${selectedProduct.Product_Price.toFixed(2)}</p>
                                 <p><strong>Status:</strong> {selectedProduct.Status ? "Available" : "Out of Stock"}</p>
-                                <p><strong>Average Rating:</strong> {selectedProduct.average_rating ? selectedProduct.average_rating : "No ratings yet"}</p>
-                                <div>
-                                    <h3>Reviews</h3>
-                                    {selectedProduct.reviews && selectedProduct.reviews.length > 0 ? (
-                                        selectedProduct.reviews.map((review, index) => (
-                                            <div key={index} style={{ marginBottom: '10px', borderBottom: '1px solid #ccc' }}>
-                                                <p><strong>{review.reviewer_email}</strong> ({review.rating}/5)</p>
-                                                <p>{review.review_msg}</p>
-                                                <p><small>{new Date(review.date).toLocaleString()}</small></p>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p>No reviews yet</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <h3>Add a Review</h3>
-                                    <div className="search-bar" >
-                                        <label htmlFor="newRating">Rating (0-5):</label>
-                                        <input
-                                            style={{maxWidth: 30}}
-                                            id="newRating"
-                                            type="number"
-                                            min="0"
-                                            max="5"
-                                            value={newRating}
-                                            onChange={(e) => setNewRating(Number(e.target.value))}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="newReview">Review:</label>
-
-                                    </div>
-                                    <div>
-                                    <textarea
-                                            id="newReview"
-                                            value={newReview}
-                                            onChange={(e) => setNewReview(e.target.value)}
-                                            placeholder="Write your review here"
-                                        />
-                                        </div>
-                                    <button onClick={handleAddReview} className="btn">Submit Review</button>
-                                </div>
-
                                 <div>
                                     <label htmlFor="quantity">Select Quantity:</label>
                                     <select
@@ -497,6 +471,61 @@ export default function ProductListingsPage() {
                                 <div className="pagination-controls">
                                     <button onClick={handleAddToCart} className="btn">Send to Cart</button>
                                     <button onClick={closeModal} className="btn">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {selectedReviewProduct && (
+                        <div className="modal-overlay">
+                            <div className="modal">
+                                <h2>Reviews for {selectedReviewProduct.Product_Name}</h2>
+                                <p><strong>Listing ID:</strong> {selectedReviewProduct.Listing_ID}</p>
+                                <p><strong>Average Rating:</strong> {selectedReviewProduct.average_rating ? selectedReviewProduct.average_rating : "No ratings yet"}</p>
+                                <div>
+                                    <h3>Existing Reviews</h3>
+                                    {selectedReviewProduct.reviews && selectedReviewProduct.reviews.length > 0 ? (
+                                        selectedReviewProduct.reviews.map((review, index) => (
+                                            <div key={index} style={{ marginBottom: '10px', borderBottom: '1px solid #ccc' }}>
+                                                <p><strong>{review.reviewer_email}</strong> ({review.rating}/5)</p>
+                                                <p>{review.review_msg}</p>
+                                                <p><small>{new Date(review.date).toLocaleString()}</small></p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p>No reviews yet</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <h3>Add a Review</h3>
+                                    <div className="search-bar">
+                                        <label htmlFor="newRating">Rating (1-5):</label>
+                                        <input
+                                            style={{maxWidth: 50}}
+                                            id="newRating"
+                                            type="number"
+                                            min="0"
+                                            max="5"
+                                            value={newRating}
+                                            onChange={(e) => setNewRating(Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="newReview">Review:</label>
+
+                                    </div>
+                                    <div>
+                                        <textarea
+                                            id="newReview"
+                                            value={newReview}
+                                            onChange={(e) => setNewReview(e.target.value)}
+                                            placeholder="Write your review here"
+                                        />
+                                        </div>
+                                    <button onClick={handleAddReview} className="btn">Submit Review</button>
+                                </div>
+                                <div className="pagination-controls">
+                                    <button onClick={closeReviewModal} className="btn">Close</button>
                                 </div>
                             </div>
                         </div>
