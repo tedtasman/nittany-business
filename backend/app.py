@@ -674,7 +674,7 @@ def get_seller_listings():
             'Status': listing['Status'],
             'Is_Promoted': listing['Is_Promoted'],
             'Rating': listing['Rating'],
-            "Reviews': listing['Reviews']
+            'Reviews': listing['Reviews']
         })
 
     return jsonify(listing_list), 200
@@ -891,7 +891,7 @@ def get_best_products():
             'Status': listing['Status'],
             'Is_Promoted': listing['Is_Promoted'],
             'Rating': listing['Rating'],
-            "Reviews': listing['Reviews']
+            'Reviews': listing['Reviews']
         })
 
     return jsonify(listing_list), 200
