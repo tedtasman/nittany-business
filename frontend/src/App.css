@@ -350,6 +350,8 @@ textarea, input {
     max-width: 600px;
     width: 80%;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.7);
+    overflow: scroll;
+    max-height: 80%;
 }
 
 .modal h2 {

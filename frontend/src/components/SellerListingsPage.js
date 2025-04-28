@@ -14,6 +14,7 @@ export default function SellerListingsPage() {
     const [newProductDescription, setNewProductDescription] = useState("");
     const [newProductPrice, setNewProductPrice] = useState("");
     const [newProductQuantity, setNewProductQuantity] = useState("");
+    const [newProductCategory, setNewProductCategory] = useState("");
 
     useEffect(() => {
         // get token from local storage
@@ -177,7 +178,8 @@ export default function SellerListingsPage() {
             product_name: newProductName,
             product_description: newProductDescription,
             quantity: newProductQuantity,
-            product_price: newProductPrice
+            product_price: newProductPrice,
+            category: newProductCategory,
           })
         });
       
@@ -308,9 +310,16 @@ export default function SellerListingsPage() {
                 />
                 <input
                     type="text"
-                    placeholder="Category"
+                    placeholder="Product Description"
                     value={newProductDescription}
                     onChange={(e) => setNewProductDescription(e.target.value)}
+                    required
+                />
+                <input
+                    type="text"
+                    placeholder="Category"
+                    value={newProductCategory}
+                    onChange={(e) => setNewProductCategory(e.target.value)}
                     required
                 />
                 <input
