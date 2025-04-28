@@ -786,6 +786,7 @@ def create_listing():
     quantity = int(data.get('quantity'))
     price = float(data.get('product_price'))
     status = 1 if quantity > 0 else 0
+    category = data.get('category')
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -794,7 +795,7 @@ def create_listing():
         cursor.execute('''
             INSERT INTO Product_Listings (Seller_Email, Product_Title, Product_Name, Product_Description, Quantity, Product_Price, Category, Status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (email, title, name, description, quantity, price, 'Uncategorized', status))
+        ''', (email, title, name, description, quantity, price, category, status))
 
         conn.commit()
         return jsonify({"msg": "Listing created"}), 201
