@@ -18,6 +18,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 @app.route('/api/hello', methods=['GET'])
 def hello():
     return jsonify({"message": "Hello from Flask!"})
@@ -73,6 +74,7 @@ def protected():
 
     else:
         return jsonify({"msg": "User type not defined"}), 401
+
 
 @app.route('/api/update-user', methods=['PUT'])
 def update_user():
@@ -151,31 +153,54 @@ def update_user():
         print("Error updating user:", e)
         return jsonify({'error': 'Database update failed'}), 500
 
+
 @app.route('/api/products', methods=['GET'])
 def get_products():
     category = request.args.get('category', None)
 
     try:
         conn = get_db_connection()
+        cursor = conn.cursor()
 
         if category and category != "Root":
             categories_to_filter = get_subcategories_recursively(category)
             categories_to_filter.append(category)
             placeholders = ','.join('?' for _ in categories_to_filter)
             query = f'SELECT * FROM Product_Listings WHERE Category IN ({placeholders})'
-            products = conn.execute(query, categories_to_filter).fetchall()
+            products = cursor.execute(query, categories_to_filter).fetchall()
         else:
-            products = conn.execute('''
-            SELECT * FROM Product_Listings
-            ORDER BY Is_Promoted DESC, datetime(Promotion_Date) DESC
+            products = cursor.execute('''
+                SELECT * FROM Product_Listings
+                ORDER BY Is_Promoted DESC, datetime(Promotion_Date) DESC
             ''').fetchall()
 
+        product_list = []
+        for product in products:
+            # Fetch reviews for this product
+            reviews = cursor.execute(
+                'SELECT * FROM Reviews WHERE Listing_ID = ?',
+                (product['Listing_ID'],)
+            ).fetchall()
 
-        conn.close()
+            # Calculate average rating
+            avg_rating_result = cursor.execute(
+                'SELECT AVG(rating) as avg_rating FROM Reviews WHERE Listing_ID = ?',
+                (product['Listing_ID'],)
+            ).fetchone()
+            avg_rating = round(avg_rating_result['avg_rating']) if avg_rating_result['avg_rating'] is not None else 0
 
-        product_list = [
-            {
-                'Seller_Email':  product['Seller_Email'],
+            # Build review list
+            review_list = [
+                {
+                    'review_msg': review['review_msg'],
+                    'rating': review['rating'],
+                    'reviewer_email': review['reviewer_email'],
+                    'date': review['date']
+                } for review in reviews
+            ]
+
+            product_list.append({
+                'Seller_Email': product['Seller_Email'],
                 'Listing_ID': product['Listing_ID'],
                 'Product_Title': product['Product_Title'],
                 'Product_Name': product['Product_Name'],
@@ -183,27 +208,28 @@ def get_products():
                 'Product_Description': product['Product_Description'],
                 'Quantity': product['Quantity'],
                 'Product_Price': product['Product_Price'],
-                'Status': product['Status']
-            }
-            for product in products
-        ]
+                'Status': product['Status'],
+                'Is_Promoted': product['Is_Promoted'],
+                'reviews': review_list,
+                'average_rating': avg_rating
+            })
 
+        conn.close()
         return jsonify(product_list), 200
 
     except Exception as e:
         print("Error fetching products:", e)
         return jsonify({'error': 'Database query failed'}), 500
 
-
 @app.route('/api/parent_category/<child>', methods=['GET'])
 def get_parent_categories(child):
-
     try:
         if child == 'Root':
             return jsonify('None'), 200
 
         conn = get_db_connection()
-        parent_category = conn.execute('SELECT parent_category FROM Categories WHERE category_name = ?', (child,)).fetchone()[0]
+        parent_category = \
+        conn.execute('SELECT parent_category FROM Categories WHERE category_name = ?', (child,)).fetchone()[0]
         conn.close()
 
         if not parent_category:
@@ -248,7 +274,8 @@ def get_subcategories():
 
     try:
         conn = get_db_connection()
-        categories = conn.execute('SELECT category_name FROM Categories WHERE parent_category = ?', (parent_category,)).fetchall()
+        categories = conn.execute('SELECT category_name FROM Categories WHERE parent_category = ?',
+                                  (parent_category,)).fetchall()
         conn.close()
 
         # Convert result to a list of dictionaries
@@ -294,8 +321,9 @@ def place_order():
             # Insert order into Orders table
             total_price = ordered_qty * item["Product_Price"]
             date = datetime.datetime.now()
-            cursor.execute('INSERT INTO Orders (user_email, product_id, order_date, Quantity, total_price, status) VALUES (?, ?, ?, ?, ?, ?)',
-                           (email, listing_id, date, ordered_qty, total_price, "Pending"))
+            cursor.execute(
+                'INSERT INTO Orders (user_email, product_id, order_date, Quantity, total_price, status) VALUES (?, ?, ?, ?, ?, ?)',
+                (email, listing_id, date, ordered_qty, total_price, "Pending"))
 
             # Update the product quantity and status
             new_qty = current_qty - ordered_qty
@@ -345,6 +373,7 @@ def is_buyer():
 
     return jsonify({'is_buyer': bool(buyer)}), 200
 
+
 @app.route('/api/login', methods=['POST'])
 def login():
     # receive request, get email and password
@@ -355,7 +384,7 @@ def login():
     conn = get_db_connection()
 
     # get user from db
-    user = conn.execute('SELECT * FROM users WHERE email = ?', (email, )).fetchone()
+    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
 
     conn.close()
 
@@ -379,7 +408,7 @@ def register():
     conn = get_db_connection()
 
     # check if user already exists
-    existing_user = conn.execute('SELECT * FROM users WHERE email = ?', (email, )).fetchone()
+    existing_user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
     if existing_user:
         return jsonify({"msg": "User already exists"}), 400
 
@@ -389,24 +418,28 @@ def register():
 
     # check address
     if user_type == 'buyer' or user_type == 'seller':
-        zip_code, street_number, street_name = int(data.get('zip_code')), int(data.get('street_number')), data.get('street_name')
-        address_row = conn.execute('SELECT address_id FROM Address WHERE zipcode = ? AND street_num = ? AND street_name = ?',
-                                   (zip_code, street_number, street_name)).fetchone()
+        zip_code, street_number, street_name = int(data.get('zip_code')), int(data.get('street_number')), data.get(
+            'street_name')
+        address_row = conn.execute(
+            'SELECT address_id FROM Address WHERE zipcode = ? AND street_num = ? AND street_name = ?',
+            (zip_code, street_number, street_name)).fetchone()
         if not address_row:
             # insert new address into db
             new_address_id = str(uuid.uuid4()).replace('-', '')
             conn.execute('INSERT INTO Address (address_id, zipcode, street_num, street_name) VALUES (?, ?, ?, ?)',
                          (new_address_id, zip_code, street_number, street_name))
             conn.commit()
-            address_row = conn.execute('SELECT address_id FROM Address WHERE zipcode = ? AND street_num = ? AND street_name = ?',
-                                       (zip_code, street_number, street_name)).fetchone()
+            address_row = conn.execute(
+                'SELECT address_id FROM Address WHERE zipcode = ? AND street_num = ? AND street_name = ?',
+                (zip_code, street_number, street_name)).fetchone()
 
         address_id = address_row[0]
 
     # for buyers:
     if user_type == 'buyer':
         # insert new buyer into db
-        conn.execute('INSERT INTO Buyers (email, business_name, buyer_address_id) VALUES (?, ?, ?)', (email, data.get('business_name'), address_id))
+        conn.execute('INSERT INTO Buyers (email, business_name, buyer_address_id) VALUES (?, ?, ?)',
+                     (email, data.get('business_name'), address_id))
         conn.commit()
 
     # for sellers:
@@ -414,8 +447,9 @@ def register():
         # get bank info
         bank_account_number, bank_routing_number = data.get('bank_account_number'), data.get('bank_routing_number')
         # insert new seller into db
-        conn.execute('INSERT INTO Sellers (email, business_name, business_address_id, bank_routing_number, bank_account_number, balance) VALUES (?, ?, ?, ?, ?, ?)',
-                     (email, data.get('business_name'), address_id, bank_routing_number, bank_account_number, 0))
+        conn.execute(
+            'INSERT INTO Sellers (email, business_name, business_address_id, bank_routing_number, bank_account_number, balance) VALUES (?, ?, ?, ?, ?, ?)',
+            (email, data.get('business_name'), address_id, bank_routing_number, bank_account_number, 0))
         conn.commit()
 
     # for admins:
@@ -465,8 +499,9 @@ def post_request():
     # connect to db
     conn = get_db_connection()
     # insert request into db
-    conn.execute('INSERT INTO Requests (user_email, request_type, request_date, status, primary_content, secondary_content) VALUES (?, ?, ?, ?, ?, ?)',
-                 (email, request_type, date, status, primary_content, secondary_content))
+    conn.execute(
+        'INSERT INTO Requests (user_email, request_type, request_date, status, primary_content, secondary_content) VALUES (?, ?, ?, ?, ?, ?)',
+        (email, request_type, date, status, primary_content, secondary_content))
     conn.commit()
     conn.close()
     return jsonify({"msg": "Request received successfully"}), 200
@@ -484,7 +519,6 @@ def get_requests():
     request_list = []
 
     for req in requests:
-
         request_data = {
             'request_id': req['id'],
             'user_email': req['user_email'],
@@ -500,7 +534,6 @@ def get_requests():
 @app.route('/api/get-request/<request_id>', methods=['GET'])
 @jwt_required()
 def get_request(request_id):
-
     conn = get_db_connection()
     req = conn.execute('SELECT * FROM Requests WHERE id = ?', (request_id,)).fetchone()
     conn.close()
@@ -552,7 +585,6 @@ def update_request(request_id):
     return jsonify({"msg": "Request updated successfully"}), 200
 
 
-
 @app.route('/api/add-to-cart/', methods=['PUT'])
 @jwt_required()
 def add_to_cart():
@@ -579,16 +611,19 @@ def add_to_cart():
         return jsonify({"msg": "Not enough stock"}), 400
 
     # check if product is already in cart
-    existing_cart_item = conn.execute('SELECT * FROM Cart_Item WHERE Email = ? AND product_id = ?', (email, listing_id)).fetchone()
+    existing_cart_item = conn.execute('SELECT * FROM Cart_Item WHERE Email = ? AND product_id = ?',
+                                      (email, listing_id)).fetchone()
 
     if existing_cart_item:
         # update quantity if already in cart
         new_quantity = existing_cart_item['Quantity'] + quantity
-        conn.execute('UPDATE Cart_Item SET Quantity = ? WHERE Email = ? AND product_id = ?', (new_quantity, email, listing_id))
+        conn.execute('UPDATE Cart_Item SET Quantity = ? WHERE Email = ? AND product_id = ?',
+                     (new_quantity, email, listing_id))
 
     else:
         # insert new cart item
-        conn.execute('INSERT INTO Cart_Item (Email, product_id, Quantity) VALUES (?, ?, ?)', (email, listing_id, quantity))
+        conn.execute('INSERT INTO Cart_Item (Email, product_id, Quantity) VALUES (?, ?, ?)',
+                     (email, listing_id, quantity))
 
     conn.commit()
     conn.close()
@@ -605,7 +640,8 @@ def remove_from_cart():
     # connect to db
     conn = get_db_connection()
     # get cart item from db
-    cart_item = conn.execute('SELECT * FROM Cart_Item WHERE Email = ? AND product_id = ?', (email, listing_id)).fetchone()
+    cart_item = conn.execute('SELECT * FROM Cart_Item WHERE Email = ? AND product_id = ?',
+                             (email, listing_id)).fetchone()
     if not cart_item:
         return jsonify({"msg": "Cart item not found"}), 404
     # remove cart item from db
@@ -613,7 +649,6 @@ def remove_from_cart():
     conn.commit()
     conn.close()
     return jsonify({"msg": "Product removed from cart successfully"}), 200
-
 
 
 @app.route('/api/get-cart', methods=['GET'])
@@ -646,7 +681,6 @@ def get_cart():
 
     return jsonify(cart_list), 200
 
-
 @app.route('/api/seller-listings', methods=['GET'])
 @jwt_required()
 def get_seller_listings():
@@ -677,7 +711,6 @@ def get_seller_listings():
 
     return jsonify(listing_list), 200
 
-
 @app.route('/api/update-listing', methods=['PUT'])
 @jwt_required()
 def update_listing():
@@ -697,12 +730,14 @@ def update_listing():
     # connect to db
     conn = get_db_connection()
     # update listing in db
-    conn.execute('UPDATE Product_Listings SET Product_Title = ?, Product_Name = ?, Product_Description = ?, Quantity = ?, Product_Price = ?, Status = ? WHERE Listing_ID = ?',
-                 (product_title, product_name, product_description, quantity, product_price, status, listing_id))
+    conn.execute(
+        'UPDATE Product_Listings SET Product_Title = ?, Product_Name = ?, Product_Description = ?, Quantity = ?, Product_Price = ?, Status = ? WHERE Listing_ID = ?',
+        (product_title, product_name, product_description, quantity, product_price, status, listing_id))
     conn.commit()
     conn.close()
 
     return jsonify({"msg": "Listing updated successfully"}), 200
+
 
 @app.route('/api/promote-product', methods=['POST'])
 @jwt_required()
@@ -738,6 +773,7 @@ def promote_product():
 
     return jsonify({"msg": "Product promoted successfully", "fee": fee}), 200
 
+
 @app.route('/api/create-listing', methods=['POST'])
 @jwt_required()
 def create_listing():
@@ -772,7 +808,7 @@ def create_listing():
         conn.close()
 
 
-
+@app.route('/api/get-address-from-id', methods=['GET'])
 def get_address_from_id(address_id):
     conn = get_db_connection()
     address = conn.execute('SELECT * FROM Address WHERE address_id = ?', (address_id,)).fetchone()
@@ -782,7 +818,6 @@ def get_address_from_id(address_id):
         'street_name': address['street_name'],
         'zipcode': address['zipcode']
     }
-
 
 
 def add_promotion_columns():
@@ -802,10 +837,138 @@ def add_promotion_columns():
     conn.commit()
     conn.close()
 
+
 # Uncomment this for one-time schema change
 
 add_promotion_columns()
 
 
+
+@app.route('/api/add-review', methods=['POST'])
+@jwt_required()
+def add_review():
+    data = request.get_json()
+    listing_id = data.get('listing_id')
+    email = get_jwt_identity()
+    review_msg = data.get('review')
+    rating = data.get('rating')
+
+    # Validate inputs
+    if not (isinstance(rating, int) and 0 <= rating <= 5):
+        return jsonify({"msg": "Rating must be an integer between 0 and 5"}), 400
+
+    if not review_msg:
+        return jsonify({"msg": "Review text is required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Verify that the user has purchased the product
+    purchase = cursor.execute(
+        '''
+        SELECT * FROM Orders 
+        WHERE product_id = ? AND user_email = ?
+        ''',
+        (listing_id, email)
+    ).fetchone()
+
+    if not purchase:
+        conn.close()
+        return jsonify({"msg": "You must purchase this product to leave a review"}), 403
+
+    # Verify product exists
+    product = cursor.execute(
+        'SELECT * FROM Product_Listings WHERE Listing_ID = ?',
+        (listing_id,)
+    ).fetchone()
+
+    if not product:
+        conn.close()
+        return jsonify({"msg": "Product not found"}), 404
+
+    # Insert new review into Reviews table
+    review_date = datetime.datetime.now().isoformat()
+    cursor.execute(
+        '''
+        INSERT INTO Reviews (Listing_ID, review_msg, rating, reviewer_email, date)
+        VALUES (?, ?, ?, ?, ?)
+        ''',
+        (listing_id, review_msg, rating, email, review_date)
+    )
+
+    # Calculate average rating for the product
+    avg_rating_result = cursor.execute(
+        '''
+        SELECT AVG(rating) as avg_rating
+        FROM Reviews
+        WHERE Listing_ID = ?
+        ''',
+        (listing_id,)
+    ).fetchone()
+
+    avg_rating = round(avg_rating_result['avg_rating']) if avg_rating_result['avg_rating'] is not None else 0
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "msg": "Review added successfully",
+        "review": {
+            "listing_id": listing_id,
+            "review_msg": review_msg,
+            "rating": rating,
+            "reviewer_email": email,
+            "date": review_date
+        },
+        "average_rating": avg_rating
+    }), 200
+
+def add_review_columns():
+    conn = get_db_connection()
+    try:
+        conn.execute('ALTER TABLE Product_Listings ADD COLUMN Reviews TEXT')
+    except:
+        pass
+    conn.commit()
+    conn.close()
+
+
+add_review_columns()
+
+
+# market analysis get best product by rating
+@app.route('/api/get-best-products', methods=['GET'])
+def get_best_products():
+    conn = get_db_connection()
+    conn.execute('''
+        SELECT * 
+        FROM Product_Listings 
+        GROUP BY listing_id 
+        ORDER BY AVG(Rating) DESC
+    ''')
+    listings = conn.fetchall()
+    conn.close()
+    listing_list = []
+    for listing in listings:
+        listing_list.append({
+            'Listing_ID': listing['Listing_ID'],
+            'Product_Title': listing['Product_Title'],
+            'Product_Name': listing['Product_Name'],
+            'Category': listing['Category'],
+            'Product_Description': listing['Product_Description'],
+            'Quantity': listing['Quantity'],
+            'Product_Price': listing['Product_Price'],
+            'Status': listing['Status'],
+            'Is_Promoted': listing['Is_Promoted'],
+            'Rating': listing['Rating'],
+            'Reviews': listing['Reviews']
+        })
+
+    return jsonify(listing_list), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host="0.0.0.0")
+
+
+
