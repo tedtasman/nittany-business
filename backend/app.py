@@ -672,7 +672,9 @@ def get_seller_listings():
             'Quantity': listing['Quantity'],
             'Product_Price': listing['Product_Price'],
             'Status': listing['Status'],
-            'Is_Promoted': listing['Is_Promoted']
+            'Is_Promoted': listing['Is_Promoted'],
+            'Rating': listing['Rating'],
+            "Reviews': listing['Reviews']
         })
 
     return jsonify(listing_list), 200
@@ -772,7 +774,7 @@ def create_listing():
         conn.close()
 
 
-
+@app.route('/api/get-address-from-id', methods=['GET'])
 def get_address_from_id(address_id):
     conn = get_db_connection()
     address = conn.execute('SELECT * FROM Address WHERE address_id = ?', (address_id,)).fetchone()
@@ -782,7 +784,6 @@ def get_address_from_id(address_id):
         'street_name': address['street_name'],
         'zipcode': address['zipcode']
     }
-
 
 
 def add_promotion_columns():
@@ -807,6 +808,7 @@ def add_promotion_columns():
 add_promotion_columns()
 
 #reviews section, product reviews must be made by those who made a purchase on the product.
+@app.route('/api/add-review', methods=['POST'])
 def add_review():
     data = request.get_json()
     listing_id = data.get('listing_id')
@@ -863,6 +865,37 @@ def add_review_columns():
     conn.close()
 
 add_review_columns()
+
+#market analysis get best product by rating
+@app.route('/api/get-best-products', methods=['GET'])
+def get_best_products():
+    conn = get_db_connection()
+    cursor.execute('''
+        SELECT * 
+        FROM Product_Listings 
+        GROUP BY listing_id 
+        ORDER BY AVG(Rating) DESC
+    ''')
+    listings= cursor.fetchall()
+    conn.close()
+    listing_list = []
+    for listing in listings:
+        listing_list.append({
+            'Listing_ID': listing['Listing_ID'],
+            'Product_Title': listing['Product_Title'],
+            'Product_Name': listing['Product_Name'],
+            'Category': listing['Category'],
+            'Product_Description': listing['Product_Description'],
+            'Quantity': listing['Quantity'],
+            'Product_Price': listing['Product_Price'],
+            'Status': listing['Status'],
+            'Is_Promoted': listing['Is_Promoted'],
+            'Rating': listing['Rating'],
+            "Reviews': listing['Reviews']
+        })
+
+    return jsonify(listing_list), 200
+    
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host="0.0.0.0")
