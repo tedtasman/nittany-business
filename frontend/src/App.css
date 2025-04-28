@@ -578,3 +578,21 @@ textarea, input {
     background-color: var(--background);
     overflow-x: hidden; /* Prevent horizontal scrollbar */
 }
+
+.create-listing-form {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    grid-template-rows: repeat(2, auto);
+    gap: 20px;
+    align-items: center;
+}
+
+.create-listing-form input {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    width: 300px;
+    background-color: var(--lighter-background);
+    color: var(--text);
+    transition: all 0.1s;
+}

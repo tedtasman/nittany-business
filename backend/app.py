@@ -8,13 +8,13 @@ import uuid
 import datetime
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True, origins=["http://localhost:3000"], max_age=3600)
 app.config["JWT_SECRET_KEY"] = "secret_key"
 jwt = JWTManager(app)
 
 
 def get_db_connection():
-    conn = sqlite3.connect('nittanybusiness.sqlite')
+    conn = sqlite3.connect('./nittanybusiness.sqlite')
     conn.row_factory = sqlite3.Row
     return conn
 
