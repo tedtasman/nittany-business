@@ -8,7 +8,7 @@ export default function ProductListingsPage() {
     const [products, setProducts] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedProduct, setSelectedProduct] = useState(null);
-    const [searchProductName, setSearchProductName] = useState("");  // Now search by Product Name
+    const [searchProductName, setSearchProductName] = useState("");
     const [searchListingID, setSearchListingID] = useState("");
     const [sortOption, setSortOption] = useState("none");
     const [quantity, setQuantity] = useState(1);
@@ -21,7 +21,8 @@ export default function ProductListingsPage() {
     const [selectedCategory, setSelectedCategory] = useState("Root");
     const [showCategories, setShowCategories] = useState(false);
     const [parentCategory, setParentCategory] = useState(null);
-
+    const [newReview, setNewReview] = useState("");
+    const [newRating, setNewRating] = useState(0);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -40,8 +41,7 @@ export default function ProductListingsPage() {
             .then((data) => setUserData(data))
             .catch((err) => console.error("User fetch error:", err));
 
-         fetch(`http://127.0.0.1:5000/api/products?category=${selectedCategory}`)
-
+        fetch(`http://127.0.0.1:5000/api/products?category=${selectedCategory}`)
             .then((res) => res.json())
             .then((data) => setProducts(data))
             .catch((err) => console.error("Product fetch error:", err));
@@ -76,25 +76,31 @@ export default function ProductListingsPage() {
             .catch((error) => {
                 console.error("Error fetching cart:", error);
             });
-
     }, []);
 
     useEffect(() => {
-    fetch(`http://127.0.0.1:5000/api/products?category=${encodeURIComponent(selectedCategory)}`)
-        .then((res) => res.json())
-        .then((data) => setProducts(data))
-        .catch((err) => console.error("Product fetch error:", err));
-
-}, [selectedCategory]);
+        fetch(`http://127.0.0.1:5000/api/products?category=${encodeURIComponent(selectedCategory)}`)
+            .then((res) => res.json())
+            .then((data) => setProducts(data))
+            .catch((err) => console.error("Product fetch error:", err));
+    }, [selectedCategory]);
 
     const sortProducts = (products) => {
-        if (sortOption === "priceAsc") {
-            return products.sort((a, b) => a.Product_Price - b.Product_Price);
-        } else if (sortOption === "priceDesc") {
-            return products.sort((a, b) => b.Product_Price - a.Product_Price);
-        }
-        return products;
+        const promoted = products.filter(p => p.Is_Promoted === 1);
+        const nonPromoted = products.filter(p => p.Is_Promoted !== 1);
+
+        const sortGroup = (group) => {
+            if (sortOption === "priceAsc") {
+                return group.sort((a, b) => a.Product_Price - b.Product_Price);
+            } else if (sortOption === "priceDesc") {
+                return group.sort((a, b) => b.Product_Price - a.Product_Price);
+            }
+            return group;
+        };
+
+        return [...sortGroup(promoted), ...sortGroup(nonPromoted)];
     };
+
     const removeFromCart = (indexToRemove) => {
         setCart(cart.filter((_, index) => index !== indexToRemove));
         fetch('http://127.0.0.1:5000/api/remove-from-cart/', {
@@ -116,48 +122,86 @@ export default function ProductListingsPage() {
             })
             .catch((error) => {
                 console.error("Error removing product from cart:", error);
-        })
+            });
     };
+
     const placeOrder = async () => {
-    try {
-        const response = await fetch("http://127.0.0.1:5000/api/place-order", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({ cart })
-        });
+        try {
+            const response = await fetch("http://127.0.0.1:5000/api/place-order", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify({ cart })
+            });
 
-        if (response.ok) {
-            alert("Order placed successfully!");
-            setCart([]);
-            setIsCartOpen(false);
-            // Refresh product listings
-            const res = await fetch("http://127.0.0.1:5000/api/products");
-            const data = await res.json();
-            setProducts(data);
-        } else {
-            alert("Error placing order.");
+            if (response.ok) {
+                alert("Order placed successfully!");
+                setCart([]);
+                setIsCartOpen(false);
+                const res = await fetch("http://127.0.0.1:5000/api/products");
+                const data = await res.json();
+                setProducts(data);
+            } else {
+                alert("Error placing order.");
+            }
+        } catch (err) {
+            console.error("Place order error:", err);
+            alert("Something went wrong.");
         }
-    } catch (err) {
-        console.error("Place order error:", err);
-        alert("Something went wrong.");
-    }
-};
+    };
 
+    const handleAddReview = async () => {
+        if (!newReview || newRating < 0 || newRating > 5) {
+            alert("Please provide a valid review and a rating between 0 and 5.");
+            return;
+        }
+
+        try {
+            const response = await fetch("http://127.0.0.1:5000/api/add-review", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify({
+                    listing_id: selectedProduct.Listing_ID,
+                    review: newReview,
+                    rating: newRating
+                })
+            });
+
+            if (response.ok) {
+                alert("Review added successfully!");
+                setNewReview("");
+                setNewRating(0);
+                // Refresh product data to show updated reviews
+                const res = await fetch(`http://127.0.0.1:5000/api/products?category=${encodeURIComponent(selectedCategory)}`);
+                const data = await res.json();
+                setProducts(data);
+                // Update selected product to reflect new reviews
+                const updatedProduct = data.find(p => p.Listing_ID === selectedProduct.Listing_ID);
+                setSelectedProduct(updatedProduct);
+            } else {
+                const errorData = await response.json();
+                alert(errorData.msg || "Error adding review.");
+            }
+        } catch (err) {
+            console.error("Add review error:", err);
+            alert("Something went wrong.");
+        }
+    };
 
     const filteredProducts = products.filter((product) => {
-    const matchesName = product.Product_Name.toLowerCase().includes(searchProductName.toLowerCase());
-    const matchesID = product.Listing_ID.toString().includes(searchListingID);
+        const matchesName = product.Product_Name.toLowerCase().includes(searchProductName.toLowerCase());
+        const matchesID = product.Listing_ID.toString().includes(searchListingID);
+        const price = product.Product_Price;
+        const meetsMin = minPrice === "" || price >= parseFloat(minPrice);
+        const meetsMax = maxPrice === "" || price <= parseFloat(maxPrice);
 
-    const price = product.Product_Price;
-    const meetsMin = minPrice === "" || price >= parseFloat(minPrice);
-    const meetsMax = maxPrice === "" || price <= parseFloat(maxPrice);
-
-    return matchesName && matchesID && meetsMin && meetsMax;
-});
-
+        return matchesName && matchesID && meetsMin && meetsMax;
+    });
 
     const sortedProducts = sortProducts(filteredProducts);
 
@@ -168,13 +212,15 @@ export default function ProductListingsPage() {
         console.log("Opening modal for product:", product);
         setSelectedProduct(product);
         setQuantity(1);
+        setNewReview("");
+        setNewRating(0);
     };
 
     const closeModal = () => {
         setSelectedProduct(null);
     };
-    const handleAddToCart = () => {
 
+    const handleAddToCart = () => {
         const existing = cart.find(item => item.Listing_ID === selectedProduct.Listing_ID);
         let updatedCart;
 
@@ -207,7 +253,7 @@ export default function ProductListingsPage() {
             })
             .catch((error) => {
                 console.error("Error adding product to cart:", error);
-            })
+            });
 
         setCart(updatedCart);
         alert(`Added ${quantity} ${selectedProduct.Product_Name} with id of ${selectedProduct.Listing_ID} to cart!`);
@@ -225,7 +271,7 @@ export default function ProductListingsPage() {
             .then((res) => res.json())
             .then((data) => data)
             .catch((err) => console.error("Subcategories fetch error:", err));
-    }
+    };
 
     const getParentCategory = (category) => {
         return fetch(`http://127.0.0.1:5000/api/parent_category/${category}`, {
@@ -237,9 +283,7 @@ export default function ProductListingsPage() {
             .then((res) => res.json())
             .then((data) => data)
             .catch((err) => console.error("Parent category fetch error:", err));
-    }
-
-
+    };
 
     const handleCategoryChange = async (category) => {
         try {
@@ -248,26 +292,22 @@ export default function ProductListingsPage() {
             const parentCategory = await getParentCategory(category);
 
             if (parentCategory === "None") {
-                setParentCategory(null)
-            }
-            else {
+                setParentCategory(null);
+            } else {
                 setParentCategory(parentCategory);
             }
 
             setSelectedCategory(category);
 
             if (subcategories.length > 0) {
-                setShowCategories(true)
+                setShowCategories(true);
+            } else {
+                setShowCategories(false);
             }
-            else {
-                setShowCategories(false)
-            }
-        }
-        catch (error) {
+        } catch (error) {
             console.error("Error fetching subcategories:", error);
         }
-    }
-
+    };
 
     return (
         <>
@@ -309,7 +349,6 @@ export default function ProductListingsPage() {
                                 onChange={(e) => setSearchListingID(e.target.value)}
                             />
                         </div>
-
                         <div className="search-bar">
                             <label htmlFor="sortOption">Sort by Price:</label>
                             <select
@@ -333,7 +372,6 @@ export default function ProductListingsPage() {
                                 onChange={(e) => setMinPrice(e.target.value)}
                             />
                         </div>
-
                         <div className="search-bar">
                             <label htmlFor="maxPrice">Max Price:</label>
                             <input
@@ -344,7 +382,6 @@ export default function ProductListingsPage() {
                                 onChange={(e) => setMaxPrice(e.target.value)}
                             />
                         </div>
-
                     </div>
 
                     <div className="product-listings">
@@ -362,7 +399,7 @@ export default function ProductListingsPage() {
                                 {currentProducts.map((product) => (
                                     <tr key={product.Listing_ID}>
                                         <td>{product.Listing_ID}</td>
-                                        <td>{product.Product_Title} {product.Product_Name}</td>
+                                        <td>{product.Product_Title} {product.Product_Name} {product.Is_Promoted ? "(Promoted)" : ""}</td>
                                         <td>${product.Product_Price.toFixed(2)}</td>
                                         <td>{product.Status ? "Available" : "Out of Stock"}</td>
                                         <td>
@@ -397,11 +434,55 @@ export default function ProductListingsPage() {
                                 <p><strong>Product Name:</strong> {selectedProduct.Product_Name}</p>
                                 <p><strong>Description:</strong> {selectedProduct.Product_Description}</p>
                                 <p><strong>Available Quantity:</strong> {selectedProduct.Quantity}</p>
-                                <p><strong>Price:</strong> {selectedProduct.Product_Price}</p>
+                                <p><strong>Price:</strong> ${selectedProduct.Product_Price.toFixed(2)}</p>
                                 <p><strong>Status:</strong> {selectedProduct.Status ? "Available" : "Out of Stock"}</p>
+                                <p><strong>Average Rating:</strong> {selectedProduct.average_rating ? selectedProduct.average_rating : "No ratings yet"}</p>
+                                <div>
+                                    <h3>Reviews</h3>
+                                    {selectedProduct.reviews && selectedProduct.reviews.length > 0 ? (
+                                        selectedProduct.reviews.map((review, index) => (
+                                            <div key={index} style={{ marginBottom: '10px', borderBottom: '1px solid #ccc' }}>
+                                                <p><strong>{review.reviewer_email}</strong> ({review.rating}/5)</p>
+                                                <p>{review.review_msg}</p>
+                                                <p><small>{new Date(review.date).toLocaleString()}</small></p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p>No reviews yet</p>
+                                    )}
+                                </div>
 
                                 <div>
-                                    <label htmlFor="quantity" >Select Quantity:</label>
+                                    <h3>Add a Review</h3>
+                                    <div className="search-bar" >
+                                        <label htmlFor="newRating">Rating (0-5):</label>
+                                        <input
+                                            style={{maxWidth: 30}}
+                                            id="newRating"
+                                            type="number"
+                                            min="0"
+                                            max="5"
+                                            value={newRating}
+                                            onChange={(e) => setNewRating(Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="newReview">Review:</label>
+
+                                    </div>
+                                    <div>
+                                    <textarea
+                                            id="newReview"
+                                            value={newReview}
+                                            onChange={(e) => setNewReview(e.target.value)}
+                                            placeholder="Write your review here"
+                                        />
+                                        </div>
+                                    <button onClick={handleAddReview} className="btn">Submit Review</button>
+                                </div>
+
+                                <div>
+                                    <label htmlFor="quantity">Select Quantity:</label>
                                     <select
                                         className="dropdown-dark"
                                         id="quantity"
@@ -420,6 +501,7 @@ export default function ProductListingsPage() {
                             </div>
                         </div>
                     )}
+
                     {isCartOpen && (
                         <div className="modal-overlay">
                             <div className="modal">
@@ -466,10 +548,10 @@ export default function ProductListingsPage() {
                                         </div>
                                     </>
                                 )}
-
                             </div>
                         </div>
                     )}
+
                     {showCategories && (
                         <div className="modal-overlay">
                             <div className="modal">
@@ -497,9 +579,7 @@ export default function ProductListingsPage() {
                                 </button>
                             </div>
                         </div>
-                    )
-
-                    }
+                    )}
 
                     <div className="links" style={{ marginBottom: 20 }}>
                         <Link to="/user-page">User Dashboard</Link>
