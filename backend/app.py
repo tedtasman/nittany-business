@@ -806,6 +806,67 @@ def add_promotion_columns():
 
 add_promotion_columns()
 
+#reviews section, product reviews must be made by those who made a purchase on the product.
+def add_review():
+    data = request.get_json()
+    listing_id = data.get('listing_id')
+    email = get_jwt_identity()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Verify product exists and is owned by the user.
+    product = cursor.execute(
+        'SELECT * FROM Product_Listings WHERE Listing_ID = ? AND Seller_Email = ?',
+        (listing_id, email)
+    ).fetchone()
+
+    if not product:
+        return jsonify({"msg": "Product must be purchased to leave a review."}), 404
+        
+    review = data.get('review')
+    temp = 1
+    while (temp > 0):
+        rating = data.get('rating')
+        if rating < 0 or rating > 5:
+            printf("Please choose a number between 0 and 5.")
+        else
+            temp = 0
+    review_date = datetime.datetime.now().isoformat()
+    
+    cursor.execute('''
+        UPDATE Product_Listings
+        SET Review = ?, Rating= ? Review_Date = ?
+        WHERE Listing_ID = ?
+    ''', (review, rating, review_date, listing_id))
+    
+    conn.commit()
+    conn.close()
+
+    return jsonify({"msg": "Product review completed", "Review": review}), 200
+
+def add_review_columns():
+    conn = get_db_connection()
+    try:
+        conn.execute('ALTER TABLE Product_Listings ADD COLUMN Reviews TEXT')
+    except:
+        pass
+    try:
+        conn.execute('ALTER TABLE Product_Listings ADD COLUMN Rating INTEGER DEFAULT 0')
+    except:
+        pass
+    try:
+        conn.execute('ALTER TABLE Product_Listings ADD COLUMN Review_Date TEXT')
+    except:
+        pass
+    conn.commit()
+    conn.close()
+
+add_review_columns()
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host="0.0.0.0")
+
+
+
+
